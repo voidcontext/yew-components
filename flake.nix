@@ -55,7 +55,19 @@
         packages.default = ycLib.mkCrate {
           inherit pkgs rust nodejs;
           src = ./.;
+          name = "yew-commons-rs";
+        };
+
+        packages.yew-commons = ycLib.mkCrate {
+          inherit pkgs rust nodejs;
+          src = ./yew-commons;
           name = "yew-commons";
+        };
+
+        packages.yew-autocomplete = ycLib.mkCrate {
+          inherit pkgs rust nodejs;
+          src = ./yew-autocomplete;
+          name = "yew-autocomplete";
         };
 
         devShells.default = pkgs.mkShell {
