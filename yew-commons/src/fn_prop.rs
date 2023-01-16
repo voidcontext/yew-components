@@ -34,11 +34,10 @@ impl<In, Out> Clone for FnProp<In, Out> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use wasm_bindgen_test::wasm_bindgen_test;
     use std::rc::Rc;
+    use wasm_bindgen_test::wasm_bindgen_test;
 
     use crate::FnProp;
 
