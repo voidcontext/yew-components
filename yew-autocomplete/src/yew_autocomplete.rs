@@ -1,3 +1,4 @@
+#[rustfmt::skip::macros(html)]
 use yew::prelude::*;
 
 use crate::completion_state::CompletionState;
@@ -11,12 +12,16 @@ impl Component for AutoComplete {
 
     type Properties = ();
 
-    fn create(ctx: &Context<Self>) -> Self {
-        todo!()
+    fn create(_ctx: &Context<Self>) -> Self {
+        Self {
+            state: Default::default(),
+        }
     }
 
-    fn view(&self, ctx: &Context<Self>) -> Html {
-        todo!()
+    fn view(&self, _ctx: &Context<Self>) -> Html {
+        html! {
+            <input type="text" />
+        }
     }
 }
 

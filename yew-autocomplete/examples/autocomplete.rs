@@ -17,7 +17,7 @@ fn app() -> Html {
 
 #[wasm_bindgen]
 pub fn run_app() -> Result<(), JsValue> {
-    yew::start_app::<App>();
+    yew::Renderer::<App>::new().render();
 
     Ok(())
 }
