@@ -20,15 +20,19 @@
           pname = "yew-commons-all";
           version = "0.1.0";
           src = ./.;
+          # Nodejs is need by wasm-bindgen-test
           packageAttrs.checkInputs = [pkgs.nodejs];
         };
 
         example = name:
+        # TODO: find a better way to build examples
           lib.mkWasmCrate {
             pname = "yew-commons-${name}-demo";
             version = "0.1.0";
             src = ./.;
             packageAttrs.checkInputs = [pkgs.nodejs];
+            # Build examples in the preBuild step and copy them into the release directory so that
+            # the postBuild script picks them up and generates their JS bindings
             packageAttrs.preBuild = ''
               cargo build --release --example ${name} --target=wasm32-unknown-unknown
 
@@ -44,15 +48,22 @@
         in
           pkgs.writeShellScriptBin "serve-${name}-demo"
           ''
-            set -x
-            ${pkgs.simple-http-server}/bin/simple-http-server -p 9001 -i --try-file ${demo-src}/index.html --nocache -- ${demo-src}
+            ${pkgs.simple-http-server}/bin/simple-http-server \
+              -p 9001                                         \
+              --nocache                                       \
+              -i --try-file ${demo-src}/index.html            \
+              -- ${demo-src}
           '';
 
         serve-autocomplete-demo = serve-example-demo "autocomplete";
 
         check-nix-formatting = pkgs.stdenv.mkDerivation {
           name = "nix-formatting-check";
-          src = ./.;
+          src = pkgs.lib.cleanSourceWith {
+            src = ./.;
+            # prevent re-checking the formatting when only non nix files changed
+            filter = path: _type: builtins.match ".*\.nix$" path != null;
+          };
           checkInputs = [pkgs.alejandra];
           checkPhase = ''alejandra . --check'';
           doCheck = true;
