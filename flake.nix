@@ -16,6 +16,8 @@
 
         index-html = import ./index.html.nix {inherit pkgs;};
 
+        node-packages = pkgs.callPackage ./nix/node {};
+
         yew-commons = lib.mkWasmCrate {
           pname = "yew-commons-all";
           version = "0.1.0";
@@ -65,10 +67,22 @@
             filter = path: _type: builtins.match ".*\.nix$" path != null;
           };
           checkInputs = [pkgs.alejandra];
-          checkPhase = ''alejandra . --check'';
+          checkPhase = ''
+            alejandra . --check \
+              -e nix/node  # this directory contains generated code
+          '';
           doCheck = true;
           installPhase = ''mkdir -p $out'';
         };
+
+        gen-node-packages = pkgs.writeShellScriptBin "gen-node-packages" ''
+          cd $WORKSPACE/nix/node
+          ${pkgs.node2nix}/bin/node2nix -i node-packages.json -o node-packages.nix
+        '';
+
+        fmt = pkgs.writeShellScriptBin "fmt-nix" ''
+          ${pkgs.alejandra}/bin/alejandra -e $WORKSPACE/nix/node $WORKSPACE
+        '';
       in {
         packages.default = yew-commons.package;
         checks.default = yew-commons.package;
@@ -80,7 +94,16 @@
           program = "${serve-autocomplete-demo}/bin/serve-autocomplete-demo";
         };
 
-        devShells.default = lib.mkDevShell yew-commons;
+        devShells.default = (lib.mkDevShell yew-commons).overrideAttrs (old: {
+          buildInputs =
+            old.buildInputs
+            ++ [
+              pkgs.node2nix
+              gen-node-packages
+              node-packages."cypress-12.3.x"
+              fmt
+            ];
+        });
       }
     );
 }
