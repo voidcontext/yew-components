@@ -9,10 +9,12 @@ use yew_commons::fn_prop::FnProp;
 mod autocomplete_state;
 pub mod view;
 
-pub fn make_callback<M, C, E: AsRef<Event>, F: 'static>(link: &Scope<C>, f: F) -> Callback<E>
+pub fn make_callback<M, C, E: AsRef<Event>, F: Fn(String) -> M + 'static>(
+    link: &Scope<C>,
+    f: F,
+) -> Callback<E>
 where
     C: Component<Message = M>,
-    F: Fn(String) -> M,
 {
     link.callback(move |e: E| {
         let input = e.target_dyn_into::<HtmlInputElement>().unwrap();
@@ -20,11 +22,11 @@ where
     })
 }
 
-/// The async result of the ItemResolver
+/// The async result of the `ItemResolver`
 pub type ItemResolverResult<T> = Pin<Box<dyn Future<Output = Result<Vec<T>, ()>>>>;
 
-/// ItemResolver is an async function that can be passed as a Prop, that takes the current value of
-/// the Autocomplete input and returns a Vec of Ts
+/// `ItemResolver` is an async function that can be passed as a Prop, that takes the current value of
+/// the `Autocomplete` input and returns a Vec of Ts
 pub type ItemResolver<T> = FnProp<String, ItemResolverResult<T>>;
 
 pub struct Autocomplete<V: View<T>, T> {
@@ -53,8 +55,8 @@ impl<V: 'static + View<T> + PartialEq, T: PartialEq + Clone + RenderHtml + 'stat
 
     fn create(_ctx: &Context<Self>) -> Self {
         Self {
-            state: Default::default(),
-            _view: Default::default(),
+            state: AutocompleteState::default(),
+            _view: PhantomData::default(),
         }
     }
 
@@ -89,15 +91,5 @@ impl<V: 'static + View<T> + PartialEq, T: PartialEq + Clone + RenderHtml + 'stat
                 {items}
             </>
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use wasm_bindgen_test::wasm_bindgen_test;
-
-    #[wasm_bindgen_test]
-    fn pass() {
-        assert!(true)
     }
 }

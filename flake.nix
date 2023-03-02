@@ -2,8 +2,7 @@
   description = "A libary that contains various utils for developing web apps with yew-rs";
 
   inputs.flake-utils.url = "github:numtide/flake-utils";
-  # inputs.nru.url = "github:voidcontext/nix-rust-utils";
-  inputs.nru.url = "git+ssh://gitea@git.vdx.hu/voidcontext/nix-rust-utils-staging.git?ref=main";
+  inputs.nru.url = "github:voidcontext/nix-rust-utils/v0.4.1";
 
   outputs = {
     flake-utils,

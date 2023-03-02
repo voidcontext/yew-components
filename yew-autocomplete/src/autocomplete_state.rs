@@ -10,8 +10,8 @@ pub struct AutocompleteState<T> {
 impl<T> Default for AutocompleteState<T> {
     fn default() -> Self {
         Self {
-            input: Default::default(),
-            items: Default::default(),
+            input: String::default(),
+            items: Vec::default(),
         }
     }
 }
@@ -39,7 +39,7 @@ impl<T: Clone + 'static> AutocompleteState<T> {
             let items = (ir.fun)(string).await;
 
             Msg::SetItems(items.unwrap())
-        }))
+        }));
     }
 
     pub fn set_items(&mut self, items: Vec<T>) {
@@ -84,7 +84,7 @@ mod tests {
                 spawn_local(async move {
                     let msg = f.await;
                     tx.send(msg).unwrap();
-                })
+                });
             },
             FnProp::from(|_s: String| -> ItemResolverResult<String> {
                 Box::pin(futures::future::ok(vec!["result".to_string()]))

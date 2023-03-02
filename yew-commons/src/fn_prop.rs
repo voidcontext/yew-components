@@ -3,7 +3,7 @@ use yew::Properties;
 
 /// Wraps functions to be passed around as Yew property
 ///
-/// This wrapper is very similar to [yew::Callback], but for arbitrary functions.
+/// This wrapper is very similar to [`yew::Callback`], but for arbitrary functions.
 #[derive(Properties)]
 pub struct FnProp<In, Out> {
     pub fun: Rc<dyn Fn(In) -> Out>,
@@ -36,6 +36,7 @@ impl<In, Out> Clone for FnProp<In, Out> {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::eq_op)]
     use std::rc::Rc;
     use wasm_bindgen_test::wasm_bindgen_test;
 
@@ -57,7 +58,7 @@ mod tests {
     fn eq_itself() {
         let fn_prop = FnProp::from(|_: String| "it works!");
 
-        assert!(fn_prop == fn_prop)
+        assert!(fn_prop == fn_prop);
     }
 
     #[wasm_bindgen_test]
@@ -65,7 +66,7 @@ mod tests {
         let fn_prop = FnProp::from(|_: String| "it works!");
         let cloned = fn_prop.clone();
 
-        assert!(fn_prop == cloned)
+        assert!(fn_prop == cloned);
     }
 
     #[wasm_bindgen_test]
@@ -73,7 +74,7 @@ mod tests {
         let fn_prop = FnProp::from(|_: String| "it works!");
         let other = FnProp::from(|_: String| "it works!");
 
-        assert!(fn_prop != other)
+        assert!(fn_prop != other);
     }
 
     #[wasm_bindgen_test]
@@ -82,6 +83,6 @@ mod tests {
         let fn_prop = FnProp::from(fun);
         let other = FnProp::from(fun);
 
-        assert!(fn_prop != other)
+        assert!(fn_prop != other);
     }
 }
