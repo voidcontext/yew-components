@@ -99,17 +99,18 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1673906615,
-        "narHash": "sha256-i9ZGtI2xQAVZheuni2Ks/YPn1ZwKzYFno770PZ0IVL8=",
-        "owner": "voidcontext",
-        "repo": "nix-rust-utils",
-        "rev": "f02613b168e5d02bb93ecd1b9ef525aff4b4714e",
-        "type": "github"
+        "lastModified": 1674650428,
+        "narHash": "sha256-XCXsNII6fVJmMVEDdwYaneIIsbovM5AS1CylmU9040I=",
+        "ref": "main",
+        "rev": "b96986e9c2e9652bae77104281f723dba101d184",
+        "revCount": 51,
+        "type": "git",
+        "url": "ssh://gitea@git.vdx.hu/voidcontext/nix-rust-utils-staging.git"
       },
       "original": {
-        "owner": "voidcontext",
-        "repo": "nix-rust-utils",
-        "type": "github"
+        "ref": "main",
+        "type": "git",
+        "url": "ssh://gitea@git.vdx.hu/voidcontext/nix-rust-utils-staging.git"
       }
     },
     "root": {

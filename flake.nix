@@ -2,7 +2,8 @@
   description = "A libary that contains various utils for developing web apps with yew-rs";
 
   inputs.flake-utils.url = "github:numtide/flake-utils";
-  inputs.nru.url = "github:voidcontext/nix-rust-utils";
+  # inputs.nru.url = "github:voidcontext/nix-rust-utils";
+  inputs.nru.url = "git+ssh://gitea@git.vdx.hu/voidcontext/nix-rust-utils-staging.git?ref=main";
 
   outputs = {
     flake-utils,
@@ -35,11 +36,7 @@
             packageAttrs.checkInputs = [pkgs.nodejs];
             # Build examples in the preBuild step and copy them into the release directory so that
             # the postBuild script picks them up and generates their JS bindings
-            packageAttrs.preBuild = ''
-              cargo build --release --example ${name} --target=wasm32-unknown-unknown
-
-              cp target/wasm32-unknown-unknown/release/examples/${name}.wasm target/wasm32-unknown-unknown/release
-            '';
+            packageAttrs.preBuild = lib.snippets.wasm.buildExample name;
           };
 
         serve-example-demo = name: let
@@ -49,13 +46,7 @@
           };
         in
           pkgs.writeShellScriptBin "serve-${name}-demo"
-          ''
-            ${pkgs.simple-http-server}/bin/simple-http-server \
-              -p 9001                                         \
-              --nocache                                       \
-              -i --try-file ${demo-src}/index.html            \
-              -- ${demo-src}
-          '';
+          (lib.snippets.utils.serve demo-src 9001);
 
         serve-autocomplete-demo = serve-example-demo "autocomplete";
 
@@ -83,6 +74,24 @@
         fmt = pkgs.writeShellScriptBin "fmt-nix" ''
           ${pkgs.alejandra}/bin/alejandra -e $WORKSPACE/nix/node $WORKSPACE
         '';
+
+        watch-autocomplete-demo = let
+          watches = lib.utils.watch {
+            "$WORKSPACE/yew-autocomplete/src $WORKSPACE/yew-autocomplete/examples/autocomplete.rs" = ''
+              ${lib.snippets.wasm.buildExample "autocomplete"}
+              ${lib.snippets.wasm.bindgen {outDir = "$WORKSPACE/dist/lib";}}
+            '';
+          };
+        in
+          pkgs.writeShellScriptBin "watch-autocomplete-demo"
+          (lib.snippets.utils.cleanupWrapper ''
+            out=$WORKSPACE/dist
+
+            mkdir -p $out/lib
+            cp ${index-html "autocomplete"}/index.html $out
+            ${watches}
+            ${lib.snippets.utils.serve "$out" 9001}
+          '');
       in {
         packages.default = yew-commons.package;
         checks.default = yew-commons.package;
@@ -101,6 +110,7 @@
               pkgs.node2nix
               gen-node-packages
               node-packages."cypress-12.3.x"
+              watch-autocomplete-demo
               fmt
             ];
         });

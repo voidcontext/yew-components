@@ -10,9 +10,13 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 wasm-bindgen = { version = "=0.2.83", features = ["serde-serialize"] }
 yew = "0.20"
+yew-commons = {path = "../yew-commons" }
+web-sys = { version = "0.3", features = ["HtmlSelectElement"] }
+futures = "0.3.21"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
+wasm-bindgen-futures = "0.4"
 yew = {version = "0.20", features = ["csr"]}
 web-sys = { version = "0.3", features = ["HtmlSelectElement"] }
 

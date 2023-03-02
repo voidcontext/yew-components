@@ -9,7 +9,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 wasm-bindgen = { version = "=0.2.83", features = ["serde-serialize"] }
-yew = "0.19"
+yew = "0.20"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
