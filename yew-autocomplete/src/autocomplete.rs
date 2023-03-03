@@ -81,8 +81,7 @@ impl<V: 'static + View<T> + PartialEq, T: PartialEq + Clone + RenderHtml + 'stat
         let link = ctx.link();
         let view = &ctx.props().view;
 
-        let input_field =
-            view.input_field(self.state.input(), make_callback(link, Msg::OnInput));
+        let input_field = view.input_field(self.state.input(), make_callback(link, Msg::OnInput));
 
         let items = view.items(&self.state.items());
 
