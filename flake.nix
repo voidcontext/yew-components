@@ -96,10 +96,10 @@
           name = "run-cypress";
 
           runtimeInputs = [
-              node-packages."cypress-12.3.x"
-              node-packages."wait-on-7.0.x"
-              serve-autocomplete-demo
-              pkgs.firefox
+            node-packages."cypress-12.3.x"
+            node-packages."wait-on-7.0.x"
+            serve-autocomplete-demo
+            pkgs.firefox
           ];
 
           text = ''
@@ -121,31 +121,34 @@
           doCheck = true;
         };
 
-        linuxChecks = 
-          if pkgs.stdenv.isLinux then { packages.e2e-tests = e2e-tests; }
+        linuxChecks =
+          if pkgs.stdenv.isLinux
+          then {packages.e2e-tests = e2e-tests;}
           else {};
-      in pkgs.lib.recursiveUpdate {
-        packages.default = yew-commons.package;
-        checks.default = yew-commons.package;
-        checks.serve-autocomplete-demo = serve-autocomplete-demo;
-        checks.nix-formatting = check-nix-formatting;
+      in
+        pkgs.lib.recursiveUpdate {
+          packages.default = yew-commons.package;
+          checks.default = yew-commons.package;
+          checks.serve-autocomplete-demo = serve-autocomplete-demo;
+          checks.nix-formatting = check-nix-formatting;
 
-        apps.autocomplete-demo = {
-          type = "app";
-          program = "${serve-autocomplete-demo}/bin/serve-autocomplete-demo";
-        };
+          apps.autocomplete-demo = {
+            type = "app";
+            program = "${serve-autocomplete-demo}/bin/serve-autocomplete-demo";
+          };
 
-        devShells.default = (lib.mkDevShell yew-commons).overrideAttrs (old: {
-          buildInputs =
-            old.buildInputs
-            ++ [
-              pkgs.node2nix
-              gen-node-packages
-              node-packages."cypress-12.3.x"
-              watch-autocomplete-demo
-              fmt
-            ];
-        });
-      } linuxChecks
+          devShells.default = (lib.mkDevShell yew-commons).overrideAttrs (old: {
+            buildInputs =
+              old.buildInputs
+              ++ [
+                pkgs.node2nix
+                gen-node-packages
+                node-packages."cypress-12.3.x"
+                watch-autocomplete-demo
+                fmt
+              ];
+          });
+        }
+        linuxChecks
     );
 }
