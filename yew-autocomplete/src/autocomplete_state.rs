@@ -43,7 +43,7 @@ impl<T: Clone + 'static> AutocompleteState<T> {
                 Msg::SetItems(items.unwrap())
             }));
         } else {
-            dispatcher(Box::pin(async move { Msg::SetItems(vec![]) }));
+            self.items = vec![];
         }
     }
 
@@ -110,7 +110,9 @@ mod tests {
 
         state.oninput(
             "th",
-            |_f| {},
+            |_f| {
+                panic!("Shouldn't be called");
+            },
             FnProp::from(|_s: String| -> ItemResolverResult<String> {
                 panic!("Shouldn't be called");
             }),
@@ -120,26 +122,21 @@ mod tests {
     }
 
     #[wasm_bindgen_test]
-    async fn test_oninput_should_clear_items_when_input_is_short() {
+    fn test_oninput_should_clear_items_when_input_is_short() {
         let mut state = AutocompleteState::default();
-
-        let (tx, rx) = futures::channel::oneshot::channel::<Msg<String>>();
+        state.set_items(vec!["one".to_string(), "two".to_string()]);
 
         state.oninput(
             "th",
-            |f| {
-                spawn_local(async move {
-                    let msg = f.await;
-                    tx.send(msg).unwrap();
-                });
+            |_f| {
+                panic!("Shouldn't be called");
             },
             FnProp::from(|_s: String| -> ItemResolverResult<String> {
                 panic!("Shouldn't be called")
             }),
         );
 
-        let sent = rx.await.unwrap();
-        assert_eq!(sent, Msg::SetItems(vec![]));
+        assert_eq!(state.items(), Vec::<String>::new());
     }
 
     // --- oninput
