@@ -116,15 +116,17 @@
           buildPhase = ''echo "Skipping buildphase"'';
           checkInputs = [run-cypress];
           checkPhase = ''
-          run-cypress
+            run-cypress
           '';
           doCheck = true;
         };
-      in {
+
+        linuxChecks = 
+          if pkgs.stdenv.isLinux then { packages.e2e-tests = e2e-tests; }
+          else {};
+      in pkgs.lib.recursiveUpdate {
         packages.default = yew-commons.package;
-        packages.e2e-tests = e2e-tests;
         checks.default = yew-commons.package;
-        checks.e2e-tests = e2e-tests;
         checks.serve-autocomplete-demo = serve-autocomplete-demo;
         checks.nix-formatting = check-nix-formatting;
 
@@ -144,6 +146,6 @@
               fmt
             ];
         });
-      }
+      } linuxChecks
     );
 }
