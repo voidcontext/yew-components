@@ -38,16 +38,16 @@
             packageAttrs.preBuild = lib.snippets.wasm.buildExample name;
           };
 
-        serve-example-demo = name: let
+        serve-example-demo = name: port: let
           demo-src = pkgs.symlinkJoin {
             name = "${name}-demo";
             paths = [(index-html name) (example name).package];
           };
         in
           pkgs.writeShellScriptBin "serve-${name}-demo"
-          (lib.snippets.utils.serve demo-src 9001);
+          (lib.snippets.utils.serve demo-src port);
 
-        serve-autocomplete-demo = serve-example-demo "autocomplete";
+        serve-autocomplete-demo = serve-example-demo "autocomplete" 9001;
 
         check-nix-formatting = pkgs.stdenv.mkDerivation {
           name = "nix-formatting-check";
@@ -91,9 +91,40 @@
             ${watches}
             ${lib.snippets.utils.serve "$out" 9001}
           '');
+
+        run-cypress = pkgs.writeShellApplication {
+          name = "run-cypress";
+
+          runtimeInputs = [
+              node-packages."cypress-12.3.x"
+              node-packages."wait-on-7.0.x"
+              serve-autocomplete-demo
+              pkgs.firefox
+          ];
+
+          text = ''
+            set -e -o pipefail
+            serve-autocomlete-demo&
+            wait-on http://localhost:9001
+
+            cypress run --browser firefox --headless
+          '';
+        };
+
+        e2e-tests = pkgs.stdenv.mkDerivation {
+          name = "yew-commons-e2e-tests";
+          buildPhase = ''echo "Skipping buildphase"'';
+          checkInputs = [run-cypress];
+          checkPhase = ''
+          run-cypress
+          '';
+          doCheck = true;
+        };
       in {
         packages.default = yew-commons.package;
+        packages.e2e-tests = e2e-tests;
         checks.default = yew-commons.package;
+        checks.e2e-tests = e2e-tests;
         checks.serve-autocomplete-demo = serve-autocomplete-demo;
         checks.nix-formatting = check-nix-formatting;
 
