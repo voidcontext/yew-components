@@ -1,6 +1,4 @@
-use std::{future::Future, pin::Pin};
-
-use crate::{ItemResolver, Msg};
+use crate::{Dispatcher, ItemResolver, Msg};
 
 pub struct AutocompleteState<T> {
     input: String,
@@ -16,7 +14,10 @@ impl<T> Default for AutocompleteState<T> {
     }
 }
 
-impl<T: Clone + 'static> AutocompleteState<T> {
+impl<T> AutocompleteState<T>
+where
+    T: 'static + Clone,
+{
     pub fn input(&self) -> String {
         self.input.clone()
     }
@@ -25,11 +26,11 @@ impl<T: Clone + 'static> AutocompleteState<T> {
         self.items.clone()
     }
 
-    pub fn oninput(
+    pub fn oninput<D: Dispatcher<Msg<T>>>(
         &mut self,
         value: &str,
-        dispatcher: impl FnOnce(Pin<Box<dyn Future<Output = Msg<T>>>>),
-        ir: ItemResolver<T>,
+        dispatcher: D,
+        item_resolver: ItemResolver<T>,
     ) {
         self.input = value.to_string();
 
@@ -37,8 +38,8 @@ impl<T: Clone + 'static> AutocompleteState<T> {
 
         // TODO: make the min length configurable
         if string.len() > 2 {
-            dispatcher(Box::pin(async move {
-                let items = (ir.fun)(string).await;
+            dispatcher.dispatch(Box::pin(async move {
+                let items = (item_resolver.fun)(string).await;
 
                 Msg::SetItems(items.unwrap())
             }));
@@ -55,14 +56,62 @@ impl<T: Clone + 'static> AutocompleteState<T> {
 #[cfg(test)]
 mod tests {
     use core::panic;
+    use std::{marker::PhantomData, pin::Pin};
 
-    use crate::{ItemResolverResult, Msg};
+    use crate::{Dispatcher, ItemResolverResult, Msg};
 
     use super::AutocompleteState;
 
+    use futures::{channel::oneshot::Sender, Future};
     use wasm_bindgen_futures::spawn_local;
     use wasm_bindgen_test::wasm_bindgen_test;
+
     use yew_commons::FnProp;
+
+    type PinnedFuture<T> = Pin<Box<dyn Future<Output = T> + 'static>>;
+
+    struct DispatcherMock<T> {
+        f: Box<dyn FnOnce(PinnedFuture<T>)>,
+        _t: PhantomData<T>,
+    }
+
+    impl<T: 'static + std::fmt::Debug> DispatcherMock<T> {
+        fn noop() -> Self {
+            Self {
+                f: Box::new(|_f| {}),
+                _t: PhantomData,
+            }
+        }
+
+        fn forward(tx: Sender<T>) -> Self {
+            Self {
+                f: Box::new(|f| {
+                    spawn_local(async move {
+                        let msg = f.await;
+                        tx.send(msg).unwrap();
+                    });
+                }),
+                _t: PhantomData,
+            }
+        }
+
+        fn never_called() -> Self {
+            Self {
+                f: Box::new(|_f| {
+                    panic!("shouldn't be called");
+                }),
+                _t: PhantomData,
+            }
+        }
+    }
+
+    impl<T> Dispatcher<T> for DispatcherMock<T> {
+        fn dispatch(self, future: Pin<Box<dyn futures::Future<Output = T>>>) {
+            (self.f)(future);
+        }
+    }
+
+    // --- oninput
 
     #[wasm_bindgen_test]
     fn test_oninput_sets_input_value() {
@@ -70,7 +119,7 @@ mod tests {
 
         state.oninput(
             "this is a text",
-            |_f| (),
+            DispatcherMock::noop(),
             FnProp::from(|_s: String| -> ItemResolverResult<String> {
                 Box::pin(futures::future::ok(vec![]))
             }),
@@ -78,8 +127,6 @@ mod tests {
 
         assert_eq!(state.input, "this is a text");
     }
-
-    // --- oninput
 
     #[wasm_bindgen_test]
     async fn test_oninput_should_resolve_autocomplete_items() {
@@ -89,12 +136,7 @@ mod tests {
 
         state.oninput(
             "this is a text",
-            |f| {
-                spawn_local(async move {
-                    let msg = f.await;
-                    tx.send(msg).unwrap();
-                });
-            },
+            DispatcherMock::forward(tx),
             FnProp::from(|_s: String| -> ItemResolverResult<String> {
                 Box::pin(futures::future::ok(vec!["result".to_string()]))
             }),
@@ -110,9 +152,7 @@ mod tests {
 
         state.oninput(
             "th",
-            |_f| {
-                panic!("Shouldn't be called");
-            },
+            DispatcherMock::never_called(),
             FnProp::from(|_s: String| -> ItemResolverResult<String> {
                 panic!("Shouldn't be called");
             }),
@@ -128,9 +168,7 @@ mod tests {
 
         state.oninput(
             "th",
-            |_f| {
-                panic!("Shouldn't be called");
-            },
+            DispatcherMock::never_called(),
             FnProp::from(|_s: String| -> ItemResolverResult<String> {
                 panic!("Shouldn't be called")
             }),

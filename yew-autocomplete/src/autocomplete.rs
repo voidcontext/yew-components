@@ -46,8 +46,31 @@ pub enum Msg<T> {
     SetItems(Vec<T>),
 }
 
-impl<V: 'static + View<T> + PartialEq, T: PartialEq + Clone + RenderHtml + 'static> Component
-    for Autocomplete<V, T>
+pub trait Dispatcher<T> {
+    // we could use &self, but in the tests we need to use an FnOnce to be able pass in a Sender<Msg>
+    fn dispatch(self, future: Pin<Box<dyn Future<Output = T>>>);
+}
+
+struct LinkDispatcher<C: Component> {
+    link: Scope<C>,
+}
+
+impl<C: Component> LinkDispatcher<C> {
+    fn new(link: Scope<C>) -> Self {
+        Self { link }
+    }
+}
+
+impl<C: Component> Dispatcher<C::Message> for LinkDispatcher<C> {
+    fn dispatch(self, future: Pin<Box<dyn Future<Output = C::Message>>>) {
+        self.link.send_future(future);
+    }
+}
+
+impl<V, T> Component for Autocomplete<V, T>
+where
+    V: 'static + View<T> + PartialEq,
+    T: 'static + PartialEq + Clone + RenderHtml,
 {
     type Message = Msg<T>;
 
@@ -65,7 +88,7 @@ impl<V: 'static + View<T> + PartialEq, T: PartialEq + Clone + RenderHtml + 'stat
             Msg::OnInput(value) => {
                 self.state.oninput(
                     value.as_str(),
-                    |f| ctx.link().send_future(f),
+                    LinkDispatcher::new(ctx.link().clone()),
                     ctx.props().resolve_items.clone(),
                 );
                 true
