@@ -93,7 +93,7 @@
           '');
 
         run-server-bg = pkgs.writeShellApplication {
-          name = "run-cypress";
+          name = "run-server-bg";
 
           runtimeInputs = [
             node-packages."wait-on-7.0.x"
