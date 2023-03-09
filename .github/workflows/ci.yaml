@@ -18,6 +18,10 @@ jobs:
       uses: cachix/install-nix-action@v17
     - name: Flake Check
       run: nix flake check
-    # - name: e2e tests
-    #   run: nix build .#e2e-tests
+    - name: Run server in background
+      run: nix run .#run-in-background
+    - name: Cypress run
+      uses: cypress-io/github-action@v5
+      with:
+        browser: firefox
 

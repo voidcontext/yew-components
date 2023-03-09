@@ -92,41 +92,23 @@
             ${lib.snippets.utils.serve "$out" 9001}
           '');
 
-        run-cypress = pkgs.writeShellApplication {
+        run-server-bg = pkgs.writeShellApplication {
           name = "run-cypress";
 
           runtimeInputs = [
-            node-packages."cypress-12.3.x"
             node-packages."wait-on-7.0.x"
             serve-autocomplete-demo
-            pkgs.firefox
           ];
 
           text = ''
             set -e -o pipefail
             serve-autocomlete-demo&
             wait-on http://localhost:9001
-
-            cypress run --browser firefox --headless
           '';
         };
 
-        e2e-tests = pkgs.stdenv.mkDerivation {
-          name = "yew-commons-e2e-tests";
-          buildPhase = ''echo "Skipping buildphase"'';
-          checkInputs = [run-cypress];
-          checkPhase = ''
-            run-cypress
-          '';
-          doCheck = true;
-        };
-
-        linuxChecks =
-          if pkgs.stdenv.isLinux
-          then {packages.e2e-tests = e2e-tests;}
-          else {};
       in
-        pkgs.lib.recursiveUpdate {
+        {
           packages.default = yew-commons.package;
           checks.default = yew-commons.package;
           checks.serve-autocomplete-demo = serve-autocomplete-demo;
@@ -135,6 +117,11 @@
           apps.autocomplete-demo = {
             type = "app";
             program = "${serve-autocomplete-demo}/bin/serve-autocomplete-demo";
+          };
+
+          apps.run-in-background = {
+            type = "app";
+            programt = "${run-server-bg}/bin/run-server-bg";
           };
 
           devShells.default = (lib.mkDevShell yew-commons).overrideAttrs (old: {
@@ -149,6 +136,5 @@
               ];
           });
         }
-        linuxChecks
     );
 }
