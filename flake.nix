@@ -102,7 +102,7 @@
 
           text = ''
             set -e -o pipefail
-            serve-autocomlete-demo&
+            serve-autocomplete-demo&
             wait-on http://localhost:9001
           '';
         };
