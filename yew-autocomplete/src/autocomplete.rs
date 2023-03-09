@@ -51,17 +51,17 @@ pub trait Dispatcher<T> {
     fn dispatch(self, future: Pin<Box<dyn Future<Output = T>>>);
 }
 
-struct LinkDispatcher<C: Component> {
+struct ComponentDispatcher<C: Component> {
     link: Scope<C>,
 }
 
-impl<C: Component> LinkDispatcher<C> {
+impl<C: Component> ComponentDispatcher<C> {
     fn new(link: Scope<C>) -> Self {
         Self { link }
     }
 }
 
-impl<C: Component> Dispatcher<C::Message> for LinkDispatcher<C> {
+impl<C: Component> Dispatcher<C::Message> for ComponentDispatcher<C> {
     fn dispatch(self, future: Pin<Box<dyn Future<Output = C::Message>>>) {
         self.link.send_future(future);
     }
@@ -88,7 +88,7 @@ where
             Msg::OnInput(value) => {
                 self.state.oninput(
                     value.as_str(),
-                    LinkDispatcher::new(ctx.link().clone()),
+                    ComponentDispatcher::new(ctx.link().clone()),
                     ctx.props().resolve_items.clone(),
                 );
                 true
