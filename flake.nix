@@ -119,7 +119,7 @@
 
         apps.run-in-background = {
           type = "app";
-          programt = "${run-server-bg}/bin/run-server-bg";
+          program = "${run-server-bg}/bin/run-server-bg";
         };
 
         devShells.default = (lib.mkDevShell yew-commons).overrideAttrs (old: {
