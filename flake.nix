@@ -103,7 +103,7 @@
           text = ''
             set -e -o pipefail
             serve-autocomplete-demo&
-            wait-on http://localhost:9001
+            wait-on http://0.0.0.0:9001
           '';
         };
       in {
@@ -129,6 +129,7 @@
               pkgs.node2nix
               gen-node-packages
               node-packages."cypress-12.3.x"
+              node-packages."wait-on-7.0.x"
               watch-autocomplete-demo
               fmt
             ];
