@@ -106,35 +106,33 @@
             wait-on http://localhost:9001
           '';
         };
+      in {
+        packages.default = yew-commons.package;
+        checks.default = yew-commons.package;
+        checks.serve-autocomplete-demo = serve-autocomplete-demo;
+        checks.nix-formatting = check-nix-formatting;
 
-      in
-        {
-          packages.default = yew-commons.package;
-          checks.default = yew-commons.package;
-          checks.serve-autocomplete-demo = serve-autocomplete-demo;
-          checks.nix-formatting = check-nix-formatting;
+        apps.autocomplete-demo = {
+          type = "app";
+          program = "${serve-autocomplete-demo}/bin/serve-autocomplete-demo";
+        };
 
-          apps.autocomplete-demo = {
-            type = "app";
-            program = "${serve-autocomplete-demo}/bin/serve-autocomplete-demo";
-          };
+        apps.run-in-background = {
+          type = "app";
+          programt = "${run-server-bg}/bin/run-server-bg";
+        };
 
-          apps.run-in-background = {
-            type = "app";
-            programt = "${run-server-bg}/bin/run-server-bg";
-          };
-
-          devShells.default = (lib.mkDevShell yew-commons).overrideAttrs (old: {
-            buildInputs =
-              old.buildInputs
-              ++ [
-                pkgs.node2nix
-                gen-node-packages
-                node-packages."cypress-12.3.x"
-                watch-autocomplete-demo
-                fmt
-              ];
-          });
-        }
+        devShells.default = (lib.mkDevShell yew-commons).overrideAttrs (old: {
+          buildInputs =
+            old.buildInputs
+            ++ [
+              pkgs.node2nix
+              gen-node-packages
+              node-packages."cypress-12.3.x"
+              watch-autocomplete-demo
+              fmt
+            ];
+        });
+      }
     );
 }
