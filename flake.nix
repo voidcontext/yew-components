@@ -74,32 +74,20 @@
           ${pkgs.alejandra}/bin/alejandra -e $WORKSPACE/nix/node $WORKSPACE
         '';
 
-        cypress-bin = let
-          archMap = {
-            ${flake-utils.lib.system.x86_64-linux} = {
-              arch = "linux-x64";
-              sha256 = "sha256-RhPH/MBF8lqXeFEm2sd73Z55jgcl45VsmRWtAhckrP0=";
-            };
-            ${flake-utils.lib.system.aarch64-linux} = {
-              arch = "linux-arm64";
-              sha256 = "sha256-RhPH/MBF8lqXeFEm2sd73Z55jgcl45VsmRWtAhckrP0="; # sha wrong!
-            };
-          };
+        cypress-bin = pkgs.cypress.overrideAttrs (old: let
           version = "12.3.0";
-        in
-          pkgs.cypress.overrideAttrs (old: {
-            inherit version;
+        in {
+          inherit version;
 
-            src = pkgs.fetchzip {
-              url = "https://cdn.cypress.io/desktop/${version}/${archMap.${system}.arch}/cypress.zip";
-              sha256 = archMap.${system}.sha256;
-              stripRoot = pkgs.stdenv.isLinux;
-            };
-          });
+          src = pkgs.fetchzip {
+            url = "https://cdn.cypress.io/desktop/${version}/linux-x64/cypress.zip";
+            sha256 = "sha256-RhPH/MBF8lqXeFEm2sd73Z55jgcl45VsmRWtAhckrP0=";
+          };
+        });
 
         cypress = node-packages."cypress-12.3.x".overrideAttrs (old: {
-          CYPRESS_INSTALL_BINARY = pkgs.stdenv.isLinux;
-          buildInputs = old.buildInputs ++ (pkgs.lib.optionals pkgs.stdenv.isLinux [cypress-bin]);
+          CYPRESS_INSTALL_BINARY = system == flake-utils.lib.system.x86_64-linux;
+          buildInputs = old.buildInputs ++ (pkgs.lib.optionals (system == flake-utils.lib.system.x86_64-linux) [cypress-bin]);
         });
 
         watch-autocomplete-demo = let
@@ -122,7 +110,7 @@
 
         run-e2e-tests = let
           prefix =
-            if pkgs.stdenv.isLinux
+            if system == flake-utils.lib.system.x86_64-linux
             then "CYPRESS_RUN_BINARY=${cypress-bin}/bin/Cypress xvfb-run "
             else "";
         in
