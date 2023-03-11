@@ -74,6 +74,11 @@
           ${pkgs.alejandra}/bin/alejandra -e $WORKSPACE/nix/node $WORKSPACE
         '';
 
+        cypress =
+          if pkgs.stdenv.isLinux
+          then pkgs.cypress
+          else node-packages."cypress-12.3.x";
+
         watch-autocomplete-demo = let
           watches = lib.utils.watch {
             "$WORKSPACE/yew-autocomplete/src $WORKSPACE/yew-autocomplete/examples/autocomplete.rs" = ''
@@ -92,18 +97,24 @@
             ${lib.snippets.utils.serve "$out" 9001}
           '');
 
-        run-server-bg = pkgs.writeShellApplication {
-          name = "run-server-bg";
+        run-e2e-tests = pkgs.writeShellApplication {
+          name = "run-e2e-tests";
 
           runtimeInputs = [
-            node-packages."wait-on-7.0.x"
+            pkgs.coreutils # timeout
+            pkgs.netcat
             serve-autocomplete-demo
+            cypress
           ];
 
-          text = ''
+          text = lib.snippets.utils.cleanupWrapper ''
             set -e -o pipefail
             serve-autocomplete-demo&
-            wait-on http://0.0.0.0:9001
+
+            # shellcheck disable=SC2016
+            timeout 30 sh -c 'until nc -z $0 $1; do sleep 1; done' 0.0.0.0 9001
+
+            cypress run
           '';
         };
       in {
@@ -112,25 +123,16 @@
         checks.serve-autocomplete-demo = serve-autocomplete-demo;
         checks.nix-formatting = check-nix-formatting;
 
-        apps.autocomplete-demo = {
-          type = "app";
-          program = "${serve-autocomplete-demo}/bin/serve-autocomplete-demo";
-        };
-
-        apps.run-in-background = {
-          type = "app";
-          program = "${run-server-bg}/bin/run-server-bg";
-        };
-
         devShells.default = (lib.mkDevShell yew-commons).overrideAttrs (old: {
           buildInputs =
             old.buildInputs
             ++ [
               pkgs.node2nix
               gen-node-packages
-              node-packages."cypress-12.3.x"
-              node-packages."wait-on-7.0.x"
+              cypress
               watch-autocomplete-demo
+              serve-autocomplete-demo
+              run-e2e-tests
               fmt
             ];
         });

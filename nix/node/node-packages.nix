@@ -36,51 +36,6 @@
         sha512 = "skbBzPggOVYCbnGgV+0dmBdW/s77ZkAOXIC1knS8NagwDjBrNC1LuXtQJeiN6l+m7lzmHtaoUw/ctJKdqkG57Q==";
       };
     };
-    "@hapi/hoek-9.3.0" = {
-      name = "_at_hapi_slash_hoek";
-      packageName = "@hapi/hoek";
-      version = "9.3.0";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/@hapi/hoek/-/hoek-9.3.0.tgz";
-        sha512 = "/c6rf4UJlmHlC9b5BaNvzAcFv7HZ2QHaV0D4/HNlBdvFnvQq8RI4kYdhyPCl7Xj+oWvTWQ8ujhqS53LIgAe6KQ==";
-      };
-    };
-    "@hapi/topo-5.1.0" = {
-      name = "_at_hapi_slash_topo";
-      packageName = "@hapi/topo";
-      version = "5.1.0";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/@hapi/topo/-/topo-5.1.0.tgz";
-        sha512 = "foQZKJig7Ob0BMAYBfcJk8d77QtOe7Wo4ox7ff1lQYoNNAb6jwcY1ncdoy2e9wQZzvNy7ODZCYJkK8kzmcAnAg==";
-      };
-    };
-    "@sideway/address-4.1.4" = {
-      name = "_at_sideway_slash_address";
-      packageName = "@sideway/address";
-      version = "4.1.4";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/@sideway/address/-/address-4.1.4.tgz";
-        sha512 = "7vwq+rOHVWjyXxVlR76Agnvhy8I9rpzjosTESvmhNeXOXdZZB15Fl+TI9x1SiHZH5Jv2wTGduSxFDIaq0m3DUw==";
-      };
-    };
-    "@sideway/formula-3.0.1" = {
-      name = "_at_sideway_slash_formula";
-      packageName = "@sideway/formula";
-      version = "3.0.1";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/@sideway/formula/-/formula-3.0.1.tgz";
-        sha512 = "/poHZJJVjx3L+zVD6g9KgHfYnb443oi7wLu/XKojDviHy6HOEOA6z1Trk5aR1dGcmPenJEgb2sK2I80LeS3MIg==";
-      };
-    };
-    "@sideway/pinpoint-2.0.0" = {
-      name = "_at_sideway_slash_pinpoint";
-      packageName = "@sideway/pinpoint";
-      version = "2.0.0";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/@sideway/pinpoint/-/pinpoint-2.0.0.tgz";
-        sha512 = "RNiOoTPkptFtSVzQevY/yWtZwf/RxyVnPy/OcA9HBM3MlGDnBEYL5B41H0MTn0Uec8Hi+2qUtTfG2WWZBmMejQ==";
-      };
-    };
     "@types/node-14.18.37" = {
       name = "_at_types_slash_node";
       packageName = "@types/node";
@@ -241,15 +196,6 @@
       src = fetchurl {
         url = "https://registry.npmjs.org/aws4/-/aws4-1.12.0.tgz";
         sha512 = "NmWvPnx0F1SfrQbYwOi7OeaNGokp9XhzNioJ/CSBs8Qa4vxug81mhJEAVZwxXuBmYB5KDRfMq/F3RR0BIU7sWg==";
-      };
-    };
-    "axios-0.27.2" = {
-      name = "axios";
-      packageName = "axios";
-      version = "0.27.2";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/axios/-/axios-0.27.2.tgz";
-        sha512 = "t+yRIyySRTp/wua5xEr+z1q60QmLq8ABsS5O9Me1AsE5dfKqgnCFzwiCZZ/cGNd1lq4/7akDWMxdhVlucjmnOQ==";
       };
     };
     "balanced-match-1.0.2" = {
@@ -657,15 +603,6 @@
         sha512 = "yaduQFRKLXYOGgEn6AZau90j3ggSOyiqXU0F9JZfeXYhNa+Jk4X+s45A2zg5jns87GAFa34BBm2kXw4XpNcbdg==";
       };
     };
-    "follow-redirects-1.15.2" = {
-      name = "follow-redirects";
-      packageName = "follow-redirects";
-      version = "1.15.2";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.15.2.tgz";
-        sha512 = "VQLG33o04KaQ8uYi2tVNbdrWp1QWxNNea+nmIB4EVM28v0hmP17z7aG1+wAkNzVq4KeXTq3221ye5qTJP91JwA==";
-      };
-    };
     "forever-agent-0.6.1" = {
       name = "forever-agent";
       packageName = "forever-agent";
@@ -682,15 +619,6 @@
       src = fetchurl {
         url = "https://registry.npmjs.org/form-data/-/form-data-2.3.3.tgz";
         sha512 = "1lLKB2Mu3aGP1Q/2eCOx0fNbRMe7XdwktwOruhfqqd0rIJWwN4Dh+E3hrPSlDCXnSR7UtZ1N38rVXm+6+MEhJQ==";
-      };
-    };
-    "form-data-4.0.0" = {
-      name = "form-data";
-      packageName = "form-data";
-      version = "4.0.0";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/form-data/-/form-data-4.0.0.tgz";
-        sha512 = "ETEklSGi5t0QMZuiXoA/Q6vcnxcLQP5vdugSpuAyi6SVGi2clPPp+xgEhuMaHC+zGgn31Kd235W35f7Hykkaww==";
       };
     };
     "fs-extra-9.1.0" = {
@@ -952,15 +880,6 @@
       src = fetchurl {
         url = "https://registry.npmjs.org/isstream/-/isstream-0.1.2.tgz";
         sha512 = "Yljz7ffyPbrLpLngrMtZ7NduUgVvi6wG9RJ9IUcyCd59YQ911PBJphODUcbOVbqYfxe1wuYf/LJ8PauMRwsM/g==";
-      };
-    };
-    "joi-17.8.3" = {
-      name = "joi";
-      packageName = "joi";
-      version = "17.8.3";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/joi/-/joi-17.8.3.tgz";
-        sha512 = "q5Fn6Tj/jR8PfrLrx4fpGH4v9qM6o+vDUfD4/3vxxyg34OmKcNqYZ1qn2mpLza96S8tL0p0rIw2gOZX+/cTg9w==";
       };
     };
     "jsbn-0.1.1" = {
@@ -1842,44 +1761,6 @@ in {
     meta = {
       description = "Cypress is a next generation front end testing tool built for the modern web";
       homepage = "https://github.com/cypress-io/cypress";
-      license = "MIT";
-    };
-    production = true;
-    bypassCache = true;
-    reconstructLock = true;
-  };
-  "wait-on-7.0.x" = nodeEnv.buildNodePackage {
-    name = "wait-on";
-    packageName = "wait-on";
-    version = "7.0.1";
-    src = fetchurl {
-      url = "https://registry.npmjs.org/wait-on/-/wait-on-7.0.1.tgz";
-      sha512 = "9AnJE9qTjRQOlTZIldAaf/da2eW0eSRSgcqq85mXQja/DW3MriHxkpODDSUEg+Gri/rKEcXUZHe+cevvYItaog==";
-    };
-    dependencies = [
-      sources."@hapi/hoek-9.3.0"
-      sources."@hapi/topo-5.1.0"
-      sources."@sideway/address-4.1.4"
-      sources."@sideway/formula-3.0.1"
-      sources."@sideway/pinpoint-2.0.0"
-      sources."asynckit-0.4.0"
-      sources."axios-0.27.2"
-      sources."combined-stream-1.0.8"
-      sources."delayed-stream-1.0.0"
-      sources."follow-redirects-1.15.2"
-      sources."form-data-4.0.0"
-      sources."joi-17.8.3"
-      sources."lodash-4.17.21"
-      sources."mime-db-1.52.0"
-      sources."mime-types-2.1.35"
-      sources."minimist-1.2.8"
-      sources."rxjs-7.8.0"
-      sources."tslib-2.5.0"
-    ];
-    buildInputs = globalBuildInputs;
-    meta = {
-      description = "wait-on is a cross platform command line utility and Node.js API which will wait for files, ports, sockets, and http(s) resources to become available";
-      homepage = "https://github.com/jeffbski/wait-on#readme";
       license = "MIT";
     };
     production = true;
