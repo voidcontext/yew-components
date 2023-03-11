@@ -19,5 +19,5 @@ jobs:
     - name: Flake Check
       run: nix flake check
     - name: Run e2e tests
-      run: nix develop -c run-e2e-tests
+      run: nix develop -c run-e2e-test-ci
 

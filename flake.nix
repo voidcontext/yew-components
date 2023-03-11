@@ -115,14 +115,14 @@
             ${lib.snippets.utils.serve "$out" 9001}
           '');
 
-        run-e2e-tests = let
+        mkRunE2eTests = suffix: wrapper: let
           prefix =
             if system == flake-utils.lib.system.x86_64-linux
             then "CYPRESS_RUN_BINARY=${cypress-bin}/bin/Cypress xvfb-run "
             else "";
         in
           pkgs.writeShellApplication {
-            name = "run-e2e-tests";
+            name = "run-e2e-tests${suffix}";
 
             runtimeInputs =
               [
@@ -133,7 +133,7 @@
               ]
               ++ (pkgs.lib.optionals pkgs.stdenv.isLinux [pkgs.xvfb-run]);
 
-            text = lib.snippets.utils.cleanupWrapper ''
+            text = wrapper ''
               set -e -o pipefail
               serve-autocomplete-demo&
 
@@ -143,6 +143,9 @@
               ${prefix}cypress run
             '';
           };
+
+          run-e2e-tests = mkRunE2eTests "" lib.snippets.utils.cleanupWrapper;
+          run-e2e-tests-ci = mkRunE2eTests "-ci" (text: text);
       in {
         packages.default = yew-commons.package;
         checks.default = yew-commons.package;
@@ -158,6 +161,7 @@
               watch-autocomplete-demo
               serve-autocomplete-demo
               run-e2e-tests
+              run-e2e-tests-ci
               cypress
               fmt
             ];
