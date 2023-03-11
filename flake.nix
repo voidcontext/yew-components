@@ -75,7 +75,7 @@
         '';
 
         cypress =
-          if pkgs.stdenv.isLinux
+          if system == "x86_64-linux"
           then pkgs.cypress
           else node-packages."cypress-12.3.x";
 
