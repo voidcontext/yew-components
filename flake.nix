@@ -74,10 +74,33 @@
           ${pkgs.alejandra}/bin/alejandra -e $WORKSPACE/nix/node $WORKSPACE
         '';
 
-        cypress =
-          if system == "x86_64-linux"
-          then pkgs.cypress
-          else node-packages."cypress-12.3.x";
+        cypress-bin = let
+          archMap = {
+            ${flake-utils.lib.system.x86_64-linux} = {
+              arch = "linux-x64";
+              sha256 = "sha256-RhPH/MBF8lqXeFEm2sd73Z55jgcl45VsmRWtAhckrP0=";
+            };
+            ${flake-utils.lib.system.aarch64-linux} = {
+              arch = "linux-arm64";
+              sha256 = "sha256-RhPH/MBF8lqXeFEm2sd73Z55jgcl45VsmRWtAhckrP0="; # sha wrong!
+            };
+          };
+          version = "12.3.0";
+        in
+          pkgs.cypress.overrideAttrs (old: {
+            inherit version;
+
+            src = pkgs.fetchzip {
+              url = "https://cdn.cypress.io/desktop/${version}/${archMap.${system}.arch}/cypress.zip";
+              sha256 = archMap.${system}.sha256;
+              stripRoot = pkgs.stdenv.isLinux;
+            };
+          });
+
+        cypress = node-packages."cypress-12.3.x".overrideAttrs (old: {
+          CYPRESS_INSTALL_BINARY = pkgs.stdenv.isLinux;
+          buildInputs = old.buildInputs ++ (pkgs.lib.optionals pkgs.stdenv.isLinux [cypress-bin]);
+        });
 
         watch-autocomplete-demo = let
           watches = lib.utils.watch {
@@ -97,26 +120,34 @@
             ${lib.snippets.utils.serve "$out" 9001}
           '');
 
-        run-e2e-tests = pkgs.writeShellApplication {
-          name = "run-e2e-tests";
+        run-e2e-tests = let
+          prefix =
+            if pkgs.stdenv.isLinux
+            then "CYPRESS_RUN_BINARY=${cypress-bin}/bin/Cypress xvfb-run "
+            else "";
+        in
+          pkgs.writeShellApplication {
+            name = "run-e2e-tests";
 
-          runtimeInputs = [
-            pkgs.coreutils # timeout
-            pkgs.netcat
-            serve-autocomplete-demo
-            cypress
-          ];
+            runtimeInputs =
+              [
+                pkgs.coreutils # timeout
+                pkgs.netcat
+                serve-autocomplete-demo
+                cypress
+              ]
+              ++ (pkgs.lib.optionals pkgs.stdenv.isLinux [pkgs.xvfb-run]);
 
-          text = lib.snippets.utils.cleanupWrapper ''
-            set -e -o pipefail
-            serve-autocomplete-demo&
+            text = lib.snippets.utils.cleanupWrapper ''
+              set -e -o pipefail
+              serve-autocomplete-demo&
 
-            # shellcheck disable=SC2016
-            timeout 30 sh -c 'until nc -z $0 $1; do sleep 1; done' 0.0.0.0 9001
+              # shellcheck disable=SC2016
+              timeout 30 sh -c 'until nc -z $0 $1; do sleep 1; done' 0.0.0.0 9001
 
-            cypress run
-          '';
-        };
+              ${prefix}cypress run
+            '';
+          };
       in {
         packages.default = yew-commons.package;
         checks.default = yew-commons.package;
@@ -129,10 +160,10 @@
             ++ [
               pkgs.node2nix
               gen-node-packages
-              cypress
               watch-autocomplete-demo
               serve-autocomplete-demo
               run-e2e-tests
+              cypress
               fmt
             ];
         });
