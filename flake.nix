@@ -85,10 +85,17 @@
           };
         });
 
-        cypress = node-packages."cypress-12.3.x".overrideAttrs (old: {
-          CYPRESS_INSTALL_BINARY = system == flake-utils.lib.system.x86_64-linux;
-          buildInputs = old.buildInputs ++ (pkgs.lib.optionals (system == flake-utils.lib.system.x86_64-linux) [cypress-bin]);
-        });
+        cypress = node-packages."cypress-12.3.x".overrideAttrs (old:
+          {
+            buildInputs = old.buildInputs ++ (pkgs.lib.optionals (system == flake-utils.lib.system.x86_64-linux) [cypress-bin]);
+          }
+          // (
+            if system == flake-utils.lib.system.x86_64-linux
+            then {
+              CYPRESS_INSTALL_BINARY = 0;
+            }
+            else {}
+          ));
 
         watch-autocomplete-demo = let
           watches = lib.utils.watch {
