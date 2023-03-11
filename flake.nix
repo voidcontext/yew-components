@@ -144,8 +144,8 @@
             '';
           };
 
-          run-e2e-tests = mkRunE2eTests "" lib.snippets.utils.cleanupWrapper;
-          run-e2e-tests-ci = mkRunE2eTests "-ci" (text: text);
+        run-e2e-tests = mkRunE2eTests "" lib.snippets.utils.cleanupWrapper;
+        run-e2e-tests-ci = mkRunE2eTests "-ci" (text: text);
       in {
         packages.default = yew-commons.package;
         checks.default = yew-commons.package;
