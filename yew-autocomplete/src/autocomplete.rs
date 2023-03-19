@@ -5,8 +5,8 @@ use yew::{html::Scope, prelude::*};
 use yew_commons::fn_prop::FnProp;
 
 use crate::{
-    autocomplete_state::AutocompleteState,
-    view::{RenderHtml, View},
+    autocomplete_state::{AutocompleteState, HighlightDirection},
+    view::{InputCallbacks, RenderHtml, View},
 };
 
 pub fn make_callback<M, C, E: AsRef<Event>, F: Fn(String) -> M + 'static>(
@@ -43,6 +43,7 @@ pub struct Props<V: View<T> + PartialEq, T: PartialEq> {
 #[derive(Debug, PartialEq)]
 pub enum Msg<T> {
     OnInput(String),
+    OnKeydown(u32),
     SetItems(Vec<T>),
 }
 
@@ -93,6 +94,14 @@ where
                 );
                 true
             }
+            Msg::OnKeydown(key) => {
+                match key {
+                    38 => self.state.set_highlight_item(&HighlightDirection::Previous),
+                    40 => self.state.set_highlight_item(&HighlightDirection::Next),
+                    _ => (), // Noop
+                };
+                true
+            }
             Msg::SetItems(items) => {
                 self.state.set_items(items);
                 true
@@ -104,9 +113,23 @@ where
         let link = ctx.link();
         let view = &ctx.props().view;
 
-        let input_field = view.input_field(self.state.input(), make_callback(link, Msg::OnInput));
+        let input_callbacks = InputCallbacks {
+            on_input: make_callback(link, Msg::OnInput),
+            on_keydown: ctx.link().callback(|e: KeyboardEvent| {
+                let code = e.which();
 
-        let items = view.items(&self.state.items());
+                match code {
+                    // This is not tested in cypres because `type`'s behaviour when hitting up and down arrow was different, it didn't move the cursor. While in the browser it jumped from beginning of the test to the end While in the browser it jumped from beginning of the test to the end
+                    38 | 40 => e.prevent_default(),
+                    _ => (),
+                };
+
+                Msg::OnKeydown(code)
+            }),
+        };
+        let input_field = view.input_field(self.state.input(), input_callbacks);
+
+        let items = view.items(&self.state.items(), &self.state.highlighted_item());
 
         html! {
             <>

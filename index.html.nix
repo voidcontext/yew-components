@@ -1,4 +1,4 @@
-{pkgs, ...}: name:
+{pkgs, ...}: name: styles:
 pkgs.writeTextFile {
   name = "index-html-${name}";
   destination = "/index.html";
@@ -7,6 +7,7 @@ pkgs.writeTextFile {
       <head>
         <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
         <meta name="viewport" content="width=device-width,initial-scale=1">
+        <style>${styles}</style>
       </head>
       <body>
         <!-- Note the usage of `type=module` here as this is an ES6 module -->

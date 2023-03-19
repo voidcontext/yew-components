@@ -18,6 +18,12 @@
 
         node-packages = pkgs.callPackage ./nix/node {};
 
+        plainViewCss = ''
+          li.autocomplete-item.selected {
+            background: gray;
+          }
+        '';
+
         yew-commons = lib.mkWasmCrate {
           pname = "yew-commons-all";
           version = "0.1.0";
@@ -41,7 +47,7 @@
         serve-example-demo = name: port: let
           demo-src = pkgs.symlinkJoin {
             name = "${name}-demo";
-            paths = [(index-html name) (example name).package];
+            paths = [(index-html name plainViewCss) (example name).package];
           };
         in
           pkgs.writeShellScriptBin "serve-${name}-demo"
@@ -110,7 +116,7 @@
             out=$WORKSPACE/dist
 
             mkdir -p $out/lib
-            cp ${index-html "autocomplete"}/index.html $out
+            cp ${index-html "autocomplete" plainViewCss}/index.html $out
             ${watches}
             ${lib.snippets.utils.serve "$out" 9001}
           '');
@@ -146,26 +152,43 @@
 
         run-e2e-tests = mkRunE2eTests "" lib.snippets.utils.cleanupWrapper;
         run-e2e-tests-ci = mkRunE2eTests "-ci" (text: text);
-      in {
-        packages.default = yew-commons.package;
-        checks.default = yew-commons.package;
-        checks.serve-autocomplete-demo = serve-autocomplete-demo;
-        checks.nix-formatting = check-nix-formatting;
 
-        devShells.default = (lib.mkDevShell yew-commons).overrideAttrs (old: {
-          buildInputs =
-            old.buildInputs
-            ++ [
-              pkgs.node2nix
-              gen-node-packages
-              watch-autocomplete-demo
-              serve-autocomplete-demo
-              run-e2e-tests
-              run-e2e-tests-ci
-              cypress
-              fmt
-            ];
-        });
-      }
+        mkApp = derivation: name: {
+          apps.${name} = {
+            type = "app";
+            program = "${derivation}/bin/${name}";
+          };
+        };
+
+        apps = let
+          derivations = [
+            (mkApp serve-autocomplete-demo "serve-autocomplete-demo")
+            (mkApp run-e2e-tests "run-e2e-tests")
+            (mkApp run-e2e-tests-ci "run-e2e-tests-ci")
+          ];
+        in
+          builtins.foldl' pkgs.lib.recursiveUpdate {} derivations;
+      in (apps
+        // {
+          packages.default = yew-commons.package;
+
+          checks.default = yew-commons.package;
+          checks.run-e2e-tests = run-e2e-tests;
+          checks.run-e2e-tests-ci = run-e2e-tests-ci;
+          checks.serve-autocomplete-demo = serve-autocomplete-demo;
+          checks.nix-formatting = check-nix-formatting;
+
+          devShells.default = (lib.mkDevShell yew-commons).overrideAttrs (old: {
+            buildInputs =
+              old.buildInputs
+              ++ [
+                pkgs.node2nix
+                gen-node-packages
+                watch-autocomplete-demo
+                cypress
+                fmt
+              ];
+          });
+        })
     );
 }
