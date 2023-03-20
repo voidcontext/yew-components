@@ -11,20 +11,20 @@ describe('autocomplete spec', () => {
       .should('have.value', 'foobar')
   })
 
-  it('generates completion options', () => {
+  it('generates completion options when input lowercased', () => {
     cy.visit('http://localhost:9001')
     cy.get('input[type=text]')
-      .type("foo")
+      .type("uni")
 
-    cy.get('li.autocomplete-item').should('have.length', 2)
+    cy.get('li.autocomplete-item').should('have.length', 3)
   })
   
   it('clear autocomplete items if we delete enough chars', () => {
     cy.visit('http://localhost:9001')
     cy.get('input[type=text]')
-      .type("foo")
+      .type("uni")
 
-    cy.get('li.autocomplete-item').should('have.length', 2)
+    cy.get('li.autocomplete-item').should('have.length', 3)
     
     cy.get('input[type=text]')
       .type("{backspace}")
@@ -35,19 +35,19 @@ describe('autocomplete spec', () => {
   it('should hihglight selected item', () => {
     cy.visit('http://localhost:9001')
     cy.get('input[type=text]')
-      .type("foo{downArrow}")
+      .type("uni{downArrow}")
 
-    cy.get('li.autocomplete-item.highlighted').should('have.text', "foo")
+    cy.get('li.autocomplete-item.highlighted').should('have.text', "United Arab Emirates")
     
     cy.get('input[type=text]')
       .type("{downArrow}")
 
-    cy.get('li.autocomplete-item.highlighted').should('have.text', "foobar")
+    cy.get('li.autocomplete-item.highlighted').should('have.text', "United Kingdom")
 
     cy.get('input[type=text]')
       .type("{upArrow}")
 
-    cy.get('li.autocomplete-item.highlighted').should('have.text', "foo")
+    cy.get('li.autocomplete-item.highlighted').should('have.text', "United Arab Emirates")
   })
 
   // Skipping this test since the `type`'s behavour is not the same is as typing in the browser so
@@ -55,20 +55,20 @@ describe('autocomplete spec', () => {
   it.skip('should not move the cursor within the input when selecting items', () => {
     cy.visit('http://localhost:9001')
     cy.get('input[type=text]')
-      .type("foo{downArrow}{downArrow}{upArrow}bar", {delay: 1000})
+      .type("uni{downArrow}{downArrow}{upArrow}ted", {delay: 1000})
 
     cy.get('input[type=text]')
-      .should('have.value', "foobar")
+      .should('have.value', "united")
     
-    cy.get('li.autocomplete-item').should('have.length', 1)
+    cy.get('li.autocomplete-item').should('have.length', 3)
   })
   
   it('should select hihglighted item', () => {
     cy.visit('http://localhost:9001')
     cy.get('input[type=text]')
-      .type("foo{downArrow}{enter}")
+      .type("united{downArrow}{downArrow}{enter}")
 
-    cy.get('li.autocomplete-item.selected:first').should('have.text', "foo")
+    cy.get('li.autocomplete-item.selected:first').should('have.text', "United Kingdom")
     
   })
 
