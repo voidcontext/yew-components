@@ -37,17 +37,17 @@ describe('autocomplete spec', () => {
     cy.get('input[type=text]')
       .type("foo{downArrow}")
 
-    cy.get('li.autocomplete-item.selected').should('have.text', "foo")
+    cy.get('li.autocomplete-item.highlighted').should('have.text', "foo")
     
     cy.get('input[type=text]')
       .type("{downArrow}")
 
-    cy.get('li.autocomplete-item.selected').should('have.text', "foobar")
+    cy.get('li.autocomplete-item.highlighted').should('have.text', "foobar")
 
     cy.get('input[type=text]')
       .type("{upArrow}")
 
-    cy.get('li.autocomplete-item.selected').should('have.text', "foo")
+    cy.get('li.autocomplete-item.highlighted').should('have.text', "foo")
   })
 
   // Skipping this test since the `type`'s behavour is not the same is as typing in the browser so
@@ -62,4 +62,15 @@ describe('autocomplete spec', () => {
     
     cy.get('li.autocomplete-item').should('have.length', 1)
   })
+  
+  it('should select hihglighted item', () => {
+    cy.visit('http://localhost:9001')
+    cy.get('input[type=text]')
+      .type("foo{downArrow}{enter}")
+
+    cy.get('li.autocomplete-item.selected:first').should('have.text', "foo")
+    
+  })
+
+  
 })

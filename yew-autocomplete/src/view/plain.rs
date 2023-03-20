@@ -26,10 +26,25 @@ impl<T: RenderHtml> View<T> for Plain {
                 let mut classes = vec!["autocomplete-item"];
 
                 if highlighed.iter().any(|h| *h == index) {
-                    classes.push("selected");
+                    classes.push("highlighted");
                 }
 
                 html! { <li class={classes!(classes)}>{value.render()}</li>}
+            })
+            .collect::<Html>();
+
+        html! {
+            <ul>
+                { lis }
+            </ul>
+        }
+    }
+
+    fn selected_items(&self, items: &[T]) -> yew::Html {
+        let lis = items
+            .iter()
+            .map(|value| {
+                html! { <li class={classes!("autocomplete-item", "selected")}>{value.render()}</li>}
             })
             .collect::<Html>();
 

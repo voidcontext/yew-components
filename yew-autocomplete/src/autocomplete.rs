@@ -79,7 +79,7 @@ where
 
     fn create(_ctx: &Context<Self>) -> Self {
         Self {
-            state: AutocompleteState::default(),
+            state: AutocompleteState::new(false),
             _view: PhantomData::default(),
         }
     }
@@ -96,6 +96,7 @@ where
             }
             Msg::OnKeydown(key) => {
                 match key {
+                    13 => self.state.select_current(),
                     38 => self.state.set_highlight_item(&HighlightDirection::Previous),
                     40 => self.state.set_highlight_item(&HighlightDirection::Next),
                     _ => (), // Noop
@@ -120,7 +121,7 @@ where
 
                 match code {
                     // This is not tested in cypres because `type`'s behaviour when hitting up and down arrow was different, it didn't move the cursor. While in the browser it jumped from beginning of the test to the end While in the browser it jumped from beginning of the test to the end
-                    38 | 40 => e.prevent_default(),
+                    13 | 38 | 40 => e.prevent_default(),
                     _ => (),
                 };
 
@@ -131,8 +132,11 @@ where
 
         let items = view.items(&self.state.items(), &self.state.highlighted_item());
 
+        let selected_items = view.selected_items(&self.state.selected_items());
+
         html! {
             <>
+                {selected_items}
                 {input_field}
                 {items}
             </>

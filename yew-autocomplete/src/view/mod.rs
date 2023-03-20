@@ -14,5 +14,6 @@ pub struct InputCallbacks {
 
 pub trait View<Item> {
     fn input_field(&self, value: String, callbacks: InputCallbacks) -> Html;
-    fn items(&self, items: &[Item], highlighted: &Option<usize>) -> Html;
+    fn items(&self, items: &[Item], highlighted: &Option<usize>) -> Html; // TODO: try if we can/should use &[&Item]
+    fn selected_items(&self, items: &[Item]) -> Html; // TODO: try if we can/should use &[&Item]
 }

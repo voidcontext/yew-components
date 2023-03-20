@@ -6,9 +6,14 @@ pub enum HighlightDirection {
 }
 
 pub struct AutocompleteState<T> {
+    // State
     input: String,
     items: Vec<T>,
     highlighted_item: Option<usize>,
+    selected_items: Vec<T>,
+
+    // Config
+    multi_select: bool,
 }
 
 impl<T> Default for AutocompleteState<T> {
@@ -17,14 +22,23 @@ impl<T> Default for AutocompleteState<T> {
             input: String::default(),
             items: Vec::default(),
             highlighted_item: None,
+            selected_items: Vec::default(),
+            multi_select: false,
         }
     }
 }
 
 impl<T> AutocompleteState<T>
 where
-    T: 'static + Clone,
+    T: 'static + Clone + PartialEq,
 {
+    pub fn new(multi_select: bool) -> Self {
+        Self {
+            multi_select,
+            ..Self::default()
+        }
+    }
+
     // ### Input
     pub fn input(&self) -> String {
         self.input.clone()
@@ -81,6 +95,27 @@ where
                         self.highlighted_item = Some(old - 1);
                     }
                 }
+            }
+        }
+    }
+
+    // # Selected items
+    pub fn selected_items(&self) -> Vec<T> {
+        self.selected_items.clone()
+    }
+
+    pub fn select_current(&mut self) {
+        if let Some(selected) = self.highlighted_item {
+            if self.multi_select {
+                if !self
+                    .selected_items
+                    .iter()
+                    .any(|item| *item == self.items[selected])
+                {
+                    self.selected_items.push(self.items[selected].clone());
+                }
+            } else {
+                self.selected_items = vec![self.items[selected].clone()];
             }
         }
     }
@@ -247,7 +282,7 @@ mod tests {
     fn test_highlight_item_next_should_highlight_first_when_no_highlighted_and_there_are_items() {
         let mut state = AutocompleteState::<&str>::default();
 
-        state.set_items(vec!["foo", "bar", "bax"]);
+        state.set_items(vec!["foo", "bar", "baz"]);
 
         state.set_highlight_item(&HighlightDirection::Next);
 
@@ -267,7 +302,7 @@ mod tests {
     fn test_highlight_item_next_should_highlight_next() {
         let mut state = AutocompleteState::<&str>::default();
 
-        state.set_items(vec!["foo", "bar", "bax"]);
+        state.set_items(vec!["foo", "bar", "baz"]);
 
         state.set_highlight_item(&HighlightDirection::Next);
         state.set_highlight_item(&HighlightDirection::Next);
@@ -291,7 +326,7 @@ mod tests {
     fn test_highlight_item_previous_should_highlight_previous() {
         let mut state = AutocompleteState::<&str>::default();
 
-        state.set_items(vec!["foo", "bar", "bax"]);
+        state.set_items(vec!["foo", "bar", "baz"]);
 
         state.set_highlight_item(&HighlightDirection::Next);
         state.set_highlight_item(&HighlightDirection::Next);
@@ -304,7 +339,7 @@ mod tests {
     fn test_highlight_item_previous_should_stop_at_first() {
         let mut state = AutocompleteState::<&str>::default();
 
-        state.set_items(vec!["foo", "bar", "bax"]);
+        state.set_items(vec!["foo", "bar", "baz"]);
 
         state.set_highlight_item(&HighlightDirection::Next);
         state.set_highlight_item(&HighlightDirection::Next);
@@ -321,5 +356,68 @@ mod tests {
         state.set_highlight_item(&HighlightDirection::Previous);
 
         assert_eq!(state.highlighted_item(), None);
+    }
+
+    // --- select items
+    #[wasm_bindgen_test]
+    fn test_selected_items_is_empty_by_default() {
+        let state = AutocompleteState::<&str>::default();
+        assert_eq!(state.selected_items(), Vec::<&str>::new());
+    }
+
+    #[wasm_bindgen_test]
+    fn test_select_current_should_select_currently_highlighted_item() {
+        let mut state = AutocompleteState::<&str>::new(false);
+
+        state.set_items(vec!["foo", "bar", "baz"]);
+
+        state.set_highlight_item(&HighlightDirection::Next);
+        state.set_highlight_item(&HighlightDirection::Next);
+
+        state.select_current();
+
+        assert_eq!(state.selected_items(), vec!["bar"]);
+    }
+
+    #[wasm_bindgen_test]
+    fn test_select_current_should_replace_the_selected_item_when_not_multi() {
+        let mut state = AutocompleteState::<&str>::new(false);
+
+        state.set_items(vec!["foo", "bar", "baz"]);
+
+        state.set_highlight_item(&HighlightDirection::Next);
+        state.select_current();
+
+        state.set_highlight_item(&HighlightDirection::Next);
+        state.select_current();
+
+        assert_eq!(state.selected_items(), vec!["bar"]);
+    }
+    #[wasm_bindgen_test]
+    fn test_select_current_should_select_multiple_items_if_configured() {
+        let mut state = AutocompleteState::<&str>::new(true);
+
+        state.set_items(vec!["foo", "bar", "baz"]);
+
+        state.set_highlight_item(&HighlightDirection::Next);
+        state.select_current();
+
+        state.set_highlight_item(&HighlightDirection::Next);
+        state.select_current();
+
+        assert_eq!(state.selected_items(), vec!["foo", "bar"]);
+    }
+
+    #[wasm_bindgen_test]
+    fn test_select_current_should_never_select_the_same_item_twice() {
+        let mut state = AutocompleteState::<&str>::new(true);
+
+        state.set_items(vec!["foo", "bar", "baz"]);
+
+        state.set_highlight_item(&HighlightDirection::Next);
+        state.select_current();
+        state.select_current();
+
+        assert_eq!(state.selected_items(), vec!["foo"]);
     }
 }
