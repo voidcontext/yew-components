@@ -12,7 +12,7 @@ fn app() -> Html {
         FnProp::from(|input: String| -> ItemResolverResult<String> {
             let items = COUNTRIES
                 .into_iter()
-                .filter(|s| s.to_lowercase().starts_with(input.as_str()))
+                .filter(|s| s.to_lowercase().starts_with(input.to_lowercase().as_str()))
                 .map(String::from)
                 .collect();
             Box::pin(futures::future::ok::<_, ()>(items))

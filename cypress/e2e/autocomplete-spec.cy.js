@@ -18,6 +18,13 @@ describe('autocomplete spec', () => {
 
     cy.get('li.autocomplete-item').should('have.length', 3)
   })
+  it('generates completion options when input capitalized', () => {
+    cy.visit('http://localhost:9001')
+    cy.get('input[type=text]')
+      .type("Uni")
+
+    cy.get('li.autocomplete-item').should('have.length', 3)
+  })
   
   it('clear autocomplete items if we delete enough chars', () => {
     cy.visit('http://localhost:9001')
