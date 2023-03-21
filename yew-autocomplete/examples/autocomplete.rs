@@ -8,6 +8,8 @@ use wasm_bindgen::prelude::*;
 
 #[function_component(App)]
 fn app() -> Html {
+    let countries = use_state(|| Vec::new());
+
     let resolve_items: ItemResolver<String> =
         FnProp::from(|input: String| -> ItemResolverResult<String> {
             let items = COUNTRIES
@@ -17,12 +19,20 @@ fn app() -> Html {
                 .collect();
             Box::pin(futures::future::ok::<_, ()>(items))
         });
+
     let view = Plain {};
+
+    let onchange = {
+        let countries = countries.clone();
+        Callback::from(move |selected: Vec<String>| countries.set(selected.clone()))
+    };
 
     html! {
         <>
             <h1>{"yew-commons: Autocomplete Demo"}</h1>
+            <p>{ if countries.is_empty() { html!{ "No countries has been selected."}} else { html!{ format!("Selected countries: {}", countries.join(", ")) }} } </p>
             <Autocomplete<Plain, String>
+                {onchange}
                 {resolve_items}
                 {view}
             />

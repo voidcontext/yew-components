@@ -37,6 +37,7 @@ pub struct Autocomplete<V: View<T>, T> {
 #[derive(PartialEq, Properties)]
 pub struct Props<V: View<T> + PartialEq, T: PartialEq> {
     pub resolve_items: ItemResolver<T>,
+    pub onchange: Callback<Vec<T>>,
     pub view: V,
 }
 
@@ -77,9 +78,9 @@ where
 
     type Properties = Props<V, T>;
 
-    fn create(_ctx: &Context<Self>) -> Self {
+    fn create(ctx: &Context<Self>) -> Self {
         Self {
-            state: AutocompleteState::new(false),
+            state: AutocompleteState::new(false, ctx.props().onchange.clone()),
             _view: PhantomData::default(),
         }
     }

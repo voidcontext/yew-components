@@ -1,3 +1,5 @@
+use yew::Callback;
+
 use crate::{Dispatcher, ItemResolver, Msg};
 
 pub enum HighlightDirection {
@@ -11,6 +13,7 @@ pub struct AutocompleteState<T> {
     items: Vec<T>,
     highlighted_item: Option<usize>,
     selected_items: Vec<T>,
+    onselect: Callback<Vec<T>>,
 
     // Config
     multi_select: bool,
@@ -23,6 +26,7 @@ impl<T> Default for AutocompleteState<T> {
             items: Vec::default(),
             highlighted_item: None,
             selected_items: Vec::default(),
+            onselect: Callback::from(|_| ()),
             multi_select: false,
         }
     }
@@ -32,8 +36,9 @@ impl<T> AutocompleteState<T>
 where
     T: 'static + Clone + PartialEq,
 {
-    pub fn new(multi_select: bool) -> Self {
+    pub fn new(multi_select: bool, onselect: Callback<Vec<T>>) -> Self {
         Self {
+            onselect,
             multi_select,
             ..Self::default()
         }
@@ -117,6 +122,8 @@ where
             } else {
                 self.selected_items = vec![self.items[selected].clone()];
             }
+
+            self.onselect.emit(self.selected_items.clone());
         }
     }
 }
@@ -124,7 +131,11 @@ where
 #[cfg(test)]
 mod tests {
     use core::panic;
-    use std::{marker::PhantomData, pin::Pin};
+    use std::{
+        marker::PhantomData,
+        pin::Pin,
+        sync::{Arc, Mutex},
+    };
 
     use crate::{Dispatcher, ItemResolverResult, Msg};
 
@@ -134,6 +145,7 @@ mod tests {
     use wasm_bindgen_futures::spawn_local;
     use wasm_bindgen_test::wasm_bindgen_test;
 
+    use yew::Callback;
     use yew_commons::FnProp;
 
     type PinnedFuture<T> = Pin<Box<dyn Future<Output = T> + 'static>>;
@@ -171,6 +183,10 @@ mod tests {
                 _t: PhantomData,
             }
         }
+    }
+
+    fn noop_callback<T>() -> Callback<T> {
+        Callback::from(|_| ())
     }
 
     impl<T> Dispatcher<T> for DispatcherMock<T> {
@@ -367,7 +383,7 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn test_select_current_should_select_currently_highlighted_item() {
-        let mut state = AutocompleteState::<&str>::new(false);
+        let mut state = AutocompleteState::<&str>::new(false, noop_callback());
 
         state.set_items(vec!["foo", "bar", "baz"]);
 
@@ -381,7 +397,7 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn test_select_current_should_replace_the_selected_item_when_not_multi() {
-        let mut state = AutocompleteState::<&str>::new(false);
+        let mut state = AutocompleteState::<&str>::new(false, noop_callback());
 
         state.set_items(vec!["foo", "bar", "baz"]);
 
@@ -395,7 +411,7 @@ mod tests {
     }
     #[wasm_bindgen_test]
     fn test_select_current_should_select_multiple_items_if_configured() {
-        let mut state = AutocompleteState::<&str>::new(true);
+        let mut state = AutocompleteState::<&str>::new(true, noop_callback());
 
         state.set_items(vec!["foo", "bar", "baz"]);
 
@@ -410,7 +426,7 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn test_select_current_should_never_select_the_same_item_twice() {
-        let mut state = AutocompleteState::<&str>::new(true);
+        let mut state = AutocompleteState::<&str>::new(true, noop_callback());
 
         state.set_items(vec!["foo", "bar", "baz"]);
 
@@ -419,5 +435,39 @@ mod tests {
         state.select_current();
 
         assert_eq!(state.selected_items(), vec!["foo"]);
+    }
+
+    #[wasm_bindgen_test]
+    fn test_select_current_should_emit_onselect_callback() {
+        let emitted = Arc::new(Mutex::new(Vec::<Vec<String>>::new()));
+        let onselect = {
+            let emitted = Arc::clone(&emitted);
+            Callback::from(move |strs: Vec<String>| {
+                let mut guard = emitted.lock().unwrap();
+                (*guard).push(strs.clone());
+            })
+        };
+
+        let mut state = AutocompleteState::<String>::new(true, onselect);
+
+        state.set_items(vec![
+            "foo".to_string(),
+            "bar".to_string(),
+            "baz".to_string(),
+        ]);
+
+        state.set_highlight_item(&HighlightDirection::Next);
+        state.select_current();
+
+        state.set_highlight_item(&HighlightDirection::Next);
+        state.select_current();
+
+        assert_eq!(
+            *emitted.lock().unwrap(),
+            vec![
+                vec!["foo".to_string()],
+                vec!["foo".to_string(), "bar".to_string()]
+            ]
+        );
     }
 }
