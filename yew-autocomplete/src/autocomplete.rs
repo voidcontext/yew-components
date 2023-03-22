@@ -39,6 +39,12 @@ pub struct Props<V: View<T> + PartialEq, T: PartialEq> {
     pub resolve_items: ItemResolver<T>,
     pub onchange: Callback<Vec<T>>,
     pub view: V,
+
+    #[prop_or(false)]
+    pub show_selected: bool,
+
+    #[prop_or(false)]
+    pub multi_select: bool,
 }
 
 #[derive(Debug, PartialEq)]
@@ -80,7 +86,7 @@ where
 
     fn create(ctx: &Context<Self>) -> Self {
         Self {
-            state: AutocompleteState::new(false, ctx.props().onchange.clone()),
+            state: AutocompleteState::new(ctx.props().multi_select, ctx.props().onchange.clone()),
             _view: PhantomData::default(),
         }
     }
@@ -133,7 +139,11 @@ where
 
         let items = view.items(&self.state.items(), &self.state.highlighted_item());
 
-        let selected_items = view.selected_items(&self.state.selected_items());
+        let selected_items = if ctx.props().show_selected {
+            view.selected_items(&self.state.selected_items())
+        } else {
+            Html::default()
+        };
 
         html! {
             <>

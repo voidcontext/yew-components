@@ -20,9 +20,7 @@ fn app() -> Html {
             Box::pin(futures::future::ok::<_, ()>(items))
         });
 
-    let view = Plain {};
-
-    let onchange = {
+    let onchange_single = {
         let countries = countries.clone();
         Callback::from(move |selected: Vec<String>| countries.set(selected.clone()))
     };
@@ -30,12 +28,26 @@ fn app() -> Html {
     html! {
         <>
             <h1>{"yew-commons: Autocomplete Demo"}</h1>
-            <p>{ if countries.is_empty() { html!{ "No countries has been selected."}} else { html!{ format!("Selected countries: {}", countries.join(", ")) }} } </p>
-            <Autocomplete<Plain, String>
-                {onchange}
-                {resolve_items}
-                {view}
-            />
+            <h2>{"multi_select: false, show_selected: false"}</h2>
+            <div id={ "single-select" }>
+                <p>{ if countries.is_empty() { html!{ "No countries has been selected."}} else { html!{ format!("Selected country: {}", countries.join(", ")) }} } </p>
+                <Autocomplete<Plain, String>
+                    onchange = { onchange_single }
+                    resolve_items = { resolve_items.clone() }
+                    show_selected = false
+                    view = { Plain {} }
+                />
+            </div>
+            <h2>{"multi_select: true, show_selected: true"}</h2>
+            <div id={ "multi-select" }>
+                <Autocomplete<Plain, String>
+                    onchange = { Callback::from(|_| ()) }
+                    multi_select = true
+                    show_selected = true
+                    {resolve_items}
+                    view = { Plain {} }
+                />
+            </div>
         </>
     }
 }

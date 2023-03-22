@@ -34,7 +34,7 @@ impl<T: RenderHtml> View<T> for Plain {
             .collect::<Html>();
 
         html! {
-            <ul>
+            <ul class="autocomplete-items">
                 { lis }
             </ul>
         }
@@ -49,7 +49,7 @@ impl<T: RenderHtml> View<T> for Plain {
             .collect::<Html>();
 
         html! {
-            <ul>
+            <ul class="selected-items">
                 { lis }
             </ul>
         }
