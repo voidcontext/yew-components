@@ -444,7 +444,7 @@ mod tests {
             let emitted = Arc::clone(&emitted);
             Callback::from(move |strs: Vec<String>| {
                 let mut guard = emitted.lock().unwrap();
-                (*guard).push(strs.clone());
+                (*guard).push(strs);
             })
         };
 
