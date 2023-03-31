@@ -20,6 +20,8 @@ wasm-bindgen-futures = "0.4"
 yew = {version = "0.20", features = ["csr"]}
 web-sys = { version = "0.3", features = ["HtmlSelectElement"] }
 
+# examples
+yew-router = "0.17.0"
 
 [[example]]
 name = "autocomplete"
