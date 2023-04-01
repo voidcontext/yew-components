@@ -7,9 +7,9 @@ use wasm_bindgen::prelude::*;
 
 use pages::simple::Simple;
 
-pub use countries::COUNTRIES;
+pub use data::countries::COUNTRIES;
 
-mod countries;
+mod data;
 mod pages;
 
 #[derive(Clone, Routable, PartialEq)]
