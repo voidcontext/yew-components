@@ -1,11 +1,10 @@
+use pages::*;
 #[rustfmt::skip::macros(html)]
 use yew::prelude::*;
 
 use yew_router::prelude::*;
 
 use wasm_bindgen::prelude::*;
-
-use pages::simple::Simple;
 
 pub use data::countries::COUNTRIES;
 
@@ -18,6 +17,8 @@ enum Route {
     Home,
     #[at("/simple")]
     Simple,
+    #[at("/multi")]
+    Multi,
 }
 
 fn switch(route: Route) -> Html {
@@ -25,10 +26,16 @@ fn switch(route: Route) -> Html {
         Route::Home => html! {
             <>
             <h1>{"yew-commons: Autocomplete Demo"}</h1>
-            <a href="/simple">{"simple"}</a>
+            <div>
+                <a href="/simple">{"simple"}</a>
+            </div>
+            <div>
+                <a href="/multi">{"multi"}</a>
+            </div>
             </>
         },
-        Route::Simple => html! { <Simple />},
+        Route::Simple => html! { <simple::Simple />},
+        Route::Multi => html! { <multi::Multi/>},
     }
 }
 

@@ -105,7 +105,7 @@
 
         watch-autocomplete-demo = let
           watches = lib.utils.watch {
-            "$WORKSPACE/yew-autocomplete/src $WORKSPACE/yew-autocomplete/examples/autocomplete.rs" = ''
+            "$WORKSPACE/yew-autocomplete/src $WORKSPACE/yew-autocomplete/examples/autocomplete" = ''
               ${lib.snippets.wasm.buildExample "autocomplete"}
               ${lib.snippets.wasm.bindgen {outDir = "$WORKSPACE/dist/lib";}}
             '';

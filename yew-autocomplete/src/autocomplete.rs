@@ -127,7 +127,10 @@ where
                 let code = e.which();
 
                 match code {
-                    // This is not tested in cypres because `type`'s behaviour when hitting up and down arrow was different, it didn't move the cursor. While in the browser it jumped from beginning of the test to the end While in the browser it jumped from beginning of the test to the end
+                    // This is not tested in cypres because `type`'s behaviour when hitting up and
+                    // down arrow was different, it didn't move the cursor. While in the browser it
+                    // jumped from beginning of the test to the end While in the browser it jumped
+                    // from beginning of the test to the end
                     13 | 38 | 40 => e.prevent_default(),
                     _ => (),
                 };
