@@ -1,4 +1,4 @@
-use std::{future::Future, marker::PhantomData, pin::Pin};
+use std::{future::Future, pin::Pin, rc::Rc};
 
 use web_sys::HtmlInputElement;
 use yew::{html::Scope, prelude::*};
@@ -6,7 +6,7 @@ use yew_commons::fn_prop::FnProp;
 
 use crate::{
     autocomplete_state::{AutocompleteState, HighlightDirection},
-    view::{InputCallbacks, RenderHtml, View},
+    view::{self, InputCallbacks, RenderHtml},
 };
 
 pub fn make_callback<M, C, E: AsRef<Event>, F: Fn(String) -> M + 'static>(
@@ -29,16 +29,15 @@ pub type ItemResolverResult<T> = Pin<Box<dyn Future<Output = Result<Vec<T>, ()>>
 /// the `Autocomplete` input and returns a Vec of Ts
 pub type ItemResolver<T> = FnProp<String, ItemResolverResult<T>>;
 
-pub struct Autocomplete<V: View<T>, T> {
+pub struct Autocomplete<T> {
     state: AutocompleteState<T>,
-    _view: PhantomData<V>,
 }
 
 #[derive(PartialEq, Properties)]
-pub struct Props<V: View<T> + PartialEq, T: PartialEq> {
+pub struct Props<T: PartialEq> {
     pub resolve_items: ItemResolver<T>,
     pub onchange: Callback<Vec<T>>,
-    pub view: V,
+    pub children: Children, // TODO: typed children?
 
     #[prop_or(false)]
     pub show_selected: bool,
@@ -75,19 +74,17 @@ impl<C: Component> Dispatcher<C::Message> for ComponentDispatcher<C> {
     }
 }
 
-impl<V, T> Component for Autocomplete<V, T>
+impl<T> Component for Autocomplete<T>
 where
-    V: 'static + View<T> + PartialEq,
     T: 'static + PartialEq + Clone + RenderHtml,
 {
     type Message = Msg<T>;
 
-    type Properties = Props<V, T>;
+    type Properties = Props<T>;
 
     fn create(ctx: &Context<Self>) -> Self {
         Self {
             state: AutocompleteState::new(ctx.props().multi_select, ctx.props().onchange.clone()),
-            _view: PhantomData::default(),
         }
     }
 
@@ -119,7 +116,6 @@ where
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         let link = ctx.link();
-        let view = &ctx.props().view;
 
         let input_callbacks = InputCallbacks {
             on_input: make_callback(link, Msg::OnInput),
@@ -138,22 +134,24 @@ where
                 Msg::OnKeydown(code)
             }),
         };
-        let input_field = view.input_field(self.state.input(), input_callbacks);
-
-        let items = view.items(&self.state.items(), &self.state.highlighted_item());
-
         let selected_items = if ctx.props().show_selected {
-            view.selected_items(&self.state.selected_items())
+            Rc::new(self.state.selected_items())
         } else {
-            Html::default()
+            Rc::new(Vec::new())
+        };
+
+        let view_context = view::Context {
+            value: self.state.input(),
+            callbacks: input_callbacks,
+            items: Rc::new(self.state.items()),
+            highlighted: self.state.highlighted_item(),
+            selected_items,
         };
 
         html! {
-            <>
-                {selected_items}
-                {input_field}
-                {items}
-            </>
+            <ContextProvider<view::Context<T>> context={view_context}>
+                {for ctx.props().children.iter() }
+            </ContextProvider<view::Context<T>>>
         }
     }
 }

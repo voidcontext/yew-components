@@ -21,13 +21,14 @@ pub fn multi() -> Html {
             <h1>{"yew-commons: Autocomplete Demo"}</h1>
             <h2>{"multi_select: true, show_selected: true"}</h2>
             <div id={ "multi-select" }>
-                <Autocomplete<Plain, String>
+                <Autocomplete<String>
                     onchange = { Callback::from(|_| ()) }
                     multi_select = true
                     show_selected = true
                     {resolve_items}
-                    view = { Plain {} }
-                />
+                >
+                    <Plain<String> />
+                </Autocomplete<String>>
             </div>
         </>
     }

@@ -29,22 +29,13 @@ pub fn simple() -> Html {
             <h2>{"multi_select: false, show_selected: false"}</h2>
             <div id={ "single-select" }>
                 <p>{ if countries.is_empty() { html!{ "No countries has been selected."}} else { html!{ format!("Selected country: {}", countries.join(", ")) }} } </p>
-                <Autocomplete<Plain, String>
+                <Autocomplete<String>
                     onchange = { onchange_single }
                     resolve_items = { resolve_items.clone() }
                     show_selected = false
-                    view = { Plain {} }
-                />
-            </div>
-            <h2>{"multi_select: true, show_selected: true"}</h2>
-            <div id={ "multi-select" }>
-                <Autocomplete<Plain, String>
-                    onchange = { Callback::from(|_| ()) }
-                    multi_select = true
-                    show_selected = true
-                    {resolve_items}
-                    view = { Plain {} }
-                />
+                >
+                    <Plain<String> />
+                </Autocomplete<String>>
             </div>
         </>
     }
