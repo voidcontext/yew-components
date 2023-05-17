@@ -1,6 +1,6 @@
 use yew::Callback;
 
-use crate::{Dispatcher, ItemResolver, Msg};
+use crate::{Config, Dispatcher, ItemResolver, Msg};
 
 pub enum HighlightDirection {
     Previous,
@@ -15,8 +15,8 @@ pub struct AutocompleteState<T> {
     selected_items: Vec<T>,
     onselect: Callback<Vec<T>>,
 
-    // Config
-    multi_select: bool,
+    // Props
+    config: Config,
 }
 
 impl<T> Default for AutocompleteState<T> {
@@ -27,7 +27,7 @@ impl<T> Default for AutocompleteState<T> {
             highlighted_item: None,
             selected_items: Vec::default(),
             onselect: Callback::from(|_| ()),
-            multi_select: false,
+            config: Config::default(),
         }
     }
 }
@@ -37,9 +37,14 @@ where
     T: 'static + Clone + PartialEq,
 {
     pub fn new(multi_select: bool, onselect: Callback<Vec<T>>) -> Self {
+        let config = Config {
+            multi_select,
+            ..Config::default()
+        };
+
         Self {
             onselect,
-            multi_select,
+            config,
             ..Self::default()
         }
     }
@@ -111,7 +116,7 @@ where
 
     pub fn select_current(&mut self) {
         if let Some(selected) = self.highlighted_item {
-            if self.multi_select {
+            if self.config.multi_select {
                 if !self
                     .selected_items
                     .iter()

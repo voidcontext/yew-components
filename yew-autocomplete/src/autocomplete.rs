@@ -4,6 +4,8 @@ use web_sys::HtmlInputElement;
 use yew::{html::Scope, prelude::*};
 use yew_commons::fn_prop::FnProp;
 
+pub use crate::config::Config;
+
 use crate::{
     autocomplete_state::{AutocompleteState, HighlightDirection},
     view::{self, InputCallbacks, RenderHtml},
@@ -33,17 +35,14 @@ pub struct Autocomplete<T> {
     state: AutocompleteState<T>,
 }
 
-#[derive(PartialEq, Properties)]
+#[derive(PartialEq, Properties, Clone)]
 pub struct Props<T: PartialEq> {
     pub resolve_items: ItemResolver<T>,
     pub onchange: Callback<Vec<T>>,
     pub children: Children, // TODO: typed children?
 
-    #[prop_or(false)]
-    pub show_selected: bool,
-
-    #[prop_or(false)]
-    pub multi_select: bool,
+    #[prop_or(Config::default())]
+    pub config: Config,
 }
 
 #[derive(Debug, PartialEq)]
@@ -51,6 +50,7 @@ pub enum Msg<T> {
     OnInput(String),
     OnKeydown(u32),
     SetItems(Vec<T>),
+    Noop,
 }
 
 pub trait Dispatcher<T> {
@@ -84,7 +84,10 @@ where
 
     fn create(ctx: &Context<Self>) -> Self {
         Self {
-            state: AutocompleteState::new(ctx.props().multi_select, ctx.props().onchange.clone()),
+            state: AutocompleteState::new(
+                ctx.props().config.multi_select,
+                ctx.props().onchange.clone(),
+            ),
         }
     }
 
@@ -111,6 +114,7 @@ where
                 self.state.set_items(items);
                 true
             }
+            Msg::Noop => false,
         }
     }
 
@@ -134,7 +138,7 @@ where
                 Msg::OnKeydown(code)
             }),
         };
-        let selected_items = if ctx.props().show_selected {
+        let selected_items = if ctx.props().config.show_selected {
             Rc::new(self.state.selected_items())
         } else {
             Rc::new(Vec::new())

@@ -1,5 +1,5 @@
 use yew::prelude::*;
-use yew_autocomplete::{view::Plain, Autocomplete, ItemResolver, ItemResolverResult};
+use yew_autocomplete::{view::Plain, Autocomplete, Config, ItemResolver, ItemResolverResult};
 use yew_commons::FnProp;
 
 use crate::COUNTRIES;
@@ -16,6 +16,11 @@ pub fn multi() -> Html {
             Box::pin(futures::future::ok::<_, ()>(items))
         });
 
+    let config = Config {
+        multi_select: true,
+        show_selected: true,
+    };
+
     html! {
         <>
             <h1>{"yew-commons: Autocomplete Demo"}</h1>
@@ -23,8 +28,7 @@ pub fn multi() -> Html {
             <div id={ "multi-select" }>
                 <Autocomplete<String>
                     onchange = { Callback::from(|_| ()) }
-                    multi_select = true
-                    show_selected = true
+                    {config}
                     {resolve_items}
                 >
                     <Plain<String> />

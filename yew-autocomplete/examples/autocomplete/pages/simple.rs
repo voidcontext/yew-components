@@ -1,5 +1,5 @@
 use yew::prelude::*;
-use yew_autocomplete::{view::Plain, Autocomplete, ItemResolver, ItemResolverResult};
+use yew_autocomplete::{view::Plain, Autocomplete, Config, ItemResolver, ItemResolverResult};
 use yew_commons::FnProp;
 
 use crate::COUNTRIES;
@@ -23,6 +23,8 @@ pub fn simple() -> Html {
         Callback::from(move |selected: Vec<String>| countries.set(selected.clone()))
     };
 
+    let config = Config::default();
+
     html! {
         <>
             <h1>{"yew-commons: Autocomplete Demo"}</h1>
@@ -31,8 +33,8 @@ pub fn simple() -> Html {
                 <p>{ if countries.is_empty() { html!{ "No countries has been selected."}} else { html!{ format!("Selected country: {}", countries.join(", ")) }} } </p>
                 <Autocomplete<String>
                     onchange = { onchange_single }
-                    resolve_items = { resolve_items.clone() }
-                    show_selected = false
+                    {resolve_items}
+                    {config}
                 >
                     <Plain<String> />
                 </Autocomplete<String>>
