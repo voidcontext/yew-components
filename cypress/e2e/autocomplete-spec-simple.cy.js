@@ -1,4 +1,4 @@
-describe('autocomplete spec', () => {
+describe('autocomplete spec - simple', () => {
   it('demo page contains an input field', () => {
     cy.visit('http://localhost:9001/simple')
     cy.get('input[type=text]')

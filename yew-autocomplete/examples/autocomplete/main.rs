@@ -1,12 +1,10 @@
-use pages::*;
+use wasm_bindgen::prelude::*;
 #[rustfmt::skip::macros(html)]
 use yew::prelude::*;
-
 use yew_router::prelude::*;
 
-use wasm_bindgen::prelude::*;
-
 pub use data::countries::COUNTRIES;
+use pages::*;
 
 mod data;
 mod pages;
@@ -19,6 +17,8 @@ enum Route {
     Simple,
     #[at("/multi")]
     Multi,
+    #[at("/non-auto")]
+    NonAuto,
 }
 
 fn switch(route: Route) -> Html {
@@ -32,10 +32,14 @@ fn switch(route: Route) -> Html {
             <div>
                 <a href="/multi">{"multi"}</a>
             </div>
+            <div>
+                <a href="/non-auto">{"non-auto"}</a>
+            </div>
             </>
         },
-        Route::Simple => html! { <simple::Simple />},
-        Route::Multi => html! { <multi::Multi/>},
+        Route::Simple => html! { <simple::Simple /> },
+        Route::Multi => html! { <multi::Multi/> },
+        Route::NonAuto => html! { <non_auto::NonAuto/> },
     }
 }
 

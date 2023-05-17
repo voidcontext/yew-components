@@ -119,10 +119,8 @@ where
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let link = ctx.link();
-
         let input_callbacks = InputCallbacks {
-            on_input: make_callback(link, Msg::OnInput),
+            on_input: ctx.link().callback(Msg::OnInput),
             on_keydown: ctx.link().callback(|e: KeyboardEvent| {
                 let code = e.which();
 
@@ -150,6 +148,7 @@ where
             items: Rc::new(self.state.items()),
             highlighted: self.state.highlighted_item(),
             selected_items,
+            config: ctx.props().config.clone(),
         };
 
         html! {

@@ -4,8 +4,10 @@ use yew_commons::FnProp;
 
 use crate::COUNTRIES;
 
-#[function_component(Multi)]
-pub fn multi() -> Html {
+#[function_component(NonAuto)]
+pub fn non_auto() -> Html {
+    let countries = use_state(|| Vec::new());
+
     let resolve_items: ItemResolver<String> =
         FnProp::from(|input: String| -> ItemResolverResult<String> {
             let items = COUNTRIES
@@ -16,21 +18,26 @@ pub fn multi() -> Html {
             Box::pin(futures::future::ok::<_, ()>(items))
         });
 
+    let onchange_single = {
+        let countries = countries.clone();
+        Callback::from(move |selected: Vec<String>| countries.set(selected.clone()))
+    };
+
     let config = Config {
-        multi_select: true,
-        show_selected: true,
+        auto: false,
         ..Config::default()
     };
 
     html! {
         <>
             <h1>{"yew-commons: Autocomplete Demo"}</h1>
-            <h2>{"multi_select: true, show_selected: true"}</h2>
-            <div id={ "multi-select" }>
+            <h2>{"multi_select: false, show_selected: false"}</h2>
+            <div id={ "single-select" }>
+                <p>{ if countries.is_empty() { html!{ "No countries has been selected."}} else { html!{ format!("Selected country: {}", countries.join(", ")) }} } </p>
                 <Autocomplete<String>
-                    onchange = { Callback::from(|_| ()) }
-                    {config}
+                    onchange = { onchange_single }
                     {resolve_items}
+                    {config}
                 >
                     <Plain<String> />
                 </Autocomplete<String>>

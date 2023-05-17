@@ -1,14 +1,19 @@
 use yew::prelude::*;
 use yew::Html;
 
+use crate::make_callback;
+
 use super::RenderHtml;
 
 pub struct Plain<T: 'static + Clone + PartialEq> {
+    value: String,
     view_context: super::Context<T>,
     _context_listener: ContextHandle<super::Context<T>>,
 }
 
 pub enum Msg<T: 'static + Clone + PartialEq> {
+    OnInput(String),
+    Search,
     ViewContextUpdated(super::Context<T>),
 }
 
@@ -32,6 +37,7 @@ impl<T: 'static + Clone + PartialEq + RenderHtml> Component for Plain<T> {
             .expect("No View Context Provided");
 
         Self {
+            value: view_context.value.clone(),
             view_context,
             _context_listener: context_listener,
         }
@@ -43,10 +49,30 @@ impl<T: 'static + Clone + PartialEq + RenderHtml> Component for Plain<T> {
                 self.view_context = ctx;
                 true
             }
+            Msg::OnInput(value) => {
+                self.value = value;
+
+                if self.view_context.config.auto {
+                    self.view_context
+                        .callbacks
+                        .on_input
+                        .emit(self.value.clone());
+                    false
+                } else {
+                    true
+                }
+            }
+            Msg::Search => {
+                self.view_context
+                    .callbacks
+                    .on_input
+                    .emit(self.value.clone());
+                false
+            }
         }
     }
 
-    fn view(&self, _ctx: &Context<Self>) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
         let items_lis = self
             .view_context
             .items
@@ -71,6 +97,9 @@ impl<T: 'static + Clone + PartialEq + RenderHtml> Component for Plain<T> {
             })
             .collect::<Html>();
 
+        let oninput = make_callback(ctx.link(), Msg::OnInput);
+        let onsearch = ctx.link().callback(|_| Msg::Search);
+
         html! {
             <div>
                 {
@@ -82,10 +111,18 @@ impl<T: 'static + Clone + PartialEq + RenderHtml> Component for Plain<T> {
                 }
                 <input
                     type="text"
-                    value={self.view_context.value.clone()}
-                    oninput={self.view_context.callbacks.on_input.clone()}
+                    value={self.value.clone()}
+                    {oninput}
                     onkeydown={self.view_context.callbacks.on_keydown.clone()}
                 />
+                {
+                    render_if(
+                        !self.view_context.config.auto,
+                        html! {
+                            <input type="button" value="Search" onclick={onsearch}/>
+                        }
+                    )
+                }
                 {
                     render_if(!self.view_context.items.is_empty(), html!{
                         <ul class="autocomplete-items">
