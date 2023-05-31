@@ -16,7 +16,7 @@ enum Route {
     #[at("/")]
     Home,
     #[at("/:view/simple")]
-    Simple {view: View},
+    Simple { view: View },
     #[at("/:view/multi")]
     Multi,
     #[at("/:view/non-auto")]
@@ -25,18 +25,18 @@ enum Route {
 
 #[derive(Clone, PartialEq)]
 pub enum View {
-    Plain
+    Plain,
 }
 
 #[derive(Properties, PartialEq)]
 pub struct PageProps {
-    view: View
+    view: View,
 }
 
 impl Display for View {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
-            View::Plain => "plain"
+            View::Plain => "plain",
         })
     }
 }
@@ -47,7 +47,7 @@ impl FromStr for View {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "plain" => Ok(View::Plain),
-            _ => Err(format!("Invalid view value {}", s))
+            _ => Err(format!("Invalid view value {}", s)),
         }
     }
 }

@@ -2,7 +2,7 @@ use yew::prelude::*;
 use yew_autocomplete::{view::Plain, Autocomplete, Config, ItemResolver, ItemResolverResult};
 use yew_commons::FnProp;
 
-use crate::{COUNTRIES, PageProps, View};
+use crate::{PageProps, View, COUNTRIES};
 
 #[function_component(Simple)]
 pub fn simple(props: &PageProps) -> Html {
@@ -26,7 +26,7 @@ pub fn simple(props: &PageProps) -> Html {
     let config = Config::default();
 
     let view = match props.view {
-        View::Plain => html! { <Plain<String> /> }
+        View::Plain => html! { <Plain<String> /> },
     };
 
     html! {
