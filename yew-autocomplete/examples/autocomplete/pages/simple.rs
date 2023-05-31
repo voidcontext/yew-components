@@ -2,10 +2,10 @@ use yew::prelude::*;
 use yew_autocomplete::{view::Plain, Autocomplete, Config, ItemResolver, ItemResolverResult};
 use yew_commons::FnProp;
 
-use crate::COUNTRIES;
+use crate::{COUNTRIES, PageProps, View};
 
 #[function_component(Simple)]
-pub fn simple() -> Html {
+pub fn simple(props: &PageProps) -> Html {
     let countries = use_state(|| Vec::new());
 
     let resolve_items: ItemResolver<String> =
@@ -25,6 +25,10 @@ pub fn simple() -> Html {
 
     let config = Config::default();
 
+    let view = match props.view {
+        View::Plain => html! { <Plain<String> /> }
+    };
+
     html! {
         <>
             <h1>{"yew-commons: Autocomplete Demo"}</h1>
@@ -36,7 +40,7 @@ pub fn simple() -> Html {
                     {resolve_items}
                     {config}
                 >
-                    <Plain<String> />
+                    {view}
                 </Autocomplete<String>>
             </div>
         </>

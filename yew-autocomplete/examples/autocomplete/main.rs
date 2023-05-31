@@ -1,3 +1,5 @@
+use std::{fmt::Display, str::FromStr};
+
 use wasm_bindgen::prelude::*;
 #[rustfmt::skip::macros(html)]
 use yew::prelude::*;
@@ -13,12 +15,41 @@ mod pages;
 enum Route {
     #[at("/")]
     Home,
-    #[at("/simple")]
-    Simple,
-    #[at("/multi")]
+    #[at("/:view/simple")]
+    Simple {view: View},
+    #[at("/:view/multi")]
     Multi,
-    #[at("/non-auto")]
+    #[at("/:view/non-auto")]
     NonAuto,
+}
+
+#[derive(Clone, PartialEq)]
+pub enum View {
+    Plain
+}
+
+#[derive(Properties, PartialEq)]
+pub struct PageProps {
+    view: View
+}
+
+impl Display for View {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            View::Plain => "plain"
+        })
+    }
+}
+
+impl FromStr for View {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "plain" => Ok(View::Plain),
+            _ => Err(format!("Invalid view value {}", s))
+        }
+    }
 }
 
 fn switch(route: Route) -> Html {
@@ -37,7 +68,7 @@ fn switch(route: Route) -> Html {
             </div>
             </>
         },
-        Route::Simple => html! { <simple::Simple /> },
+        Route::Simple { view } => html! { <simple::Simple {view} /> },
         Route::Multi => html! { <multi::Multi/> },
         Route::NonAuto => html! { <non_auto::NonAuto/> },
     }
