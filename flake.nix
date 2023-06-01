@@ -150,7 +150,7 @@
               ${prefix}cypress run
 
               # shellcheck disable=SC2046
-              kill -9 $(cat server.pid)
+              pkill -TERM -P $(cat server.pid)
             '';
           };
 
