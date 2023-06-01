@@ -148,7 +148,7 @@
               timeout 30 sh -c 'until nc -z $0 $1; do sleep 1; done' 0.0.0.0 9001
 
               ${prefix}cypress run
-              kill -9 $(cat server.pid)
+              kill -9 "$(cat server.pid)"
             '';
           };
 
