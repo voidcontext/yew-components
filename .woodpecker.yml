@@ -12,6 +12,6 @@ pipeline:
     commands:
       - set -o pipefail
       - .woodpecker/setup-nix.sh
-      - nix run .#run-e2e-tests-ci 2>&1 | nix run "git+https://git.vdx.hu/voidcontext/nix-cache-copy?ref=refs/tags/v0.2.0" -- -t /var/lib/woodpecker-agent/nix-store -k /var/lib/woodpecker-agent/nix-store/cache-priv-key.pem
+      - nix run .#run-e2e-tests-ci 2>&1 | nix run "git+https://git.vdx.hu/voidcontext/nix-cache-copy?ref=refs/tags/v0.2.0" -- -t file:///var/lib/woodpecker-agent/nix-store -k /var/lib/woodpecker-agent/nix-store/cache-priv-key.pem
     volumes:
       - /var/lib/woodpecker-agent/nix-store:/var/lib/woodpecker-agent/nix-store
