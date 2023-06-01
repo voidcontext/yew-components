@@ -140,18 +140,22 @@
               ++ (pkgs.lib.optionals pkgs.stdenv.isLinux [pkgs.xvfb-run]);
 
             text = wrapper ''
-              set -e -o pipefail
+              set -x -e -o pipefail
               serve-autocomplete-demo&
+              echo $! >> server.pid
 
               # shellcheck disable=SC2016
               timeout 30 sh -c 'until nc -z $0 $1; do sleep 1; done' 0.0.0.0 9001
 
               ${prefix}cypress run
+
+              # shellcheck disable=SC2046
+              kill -9 $(cat server.pid)
             '';
           };
 
         run-e2e-tests = mkRunE2eTests "" lib.snippets.utils.cleanupWrapper;
-        run-e2e-tests-ci = mkRunE2eTests "-ci" lib.snippets.utils.cleanupWrapper;
+        run-e2e-tests-ci = mkRunE2eTests "-ci" (text: text);
 
         mkApp = derivation: name: {
           apps.${name} = {

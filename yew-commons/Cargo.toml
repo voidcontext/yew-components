@@ -1,6 +1,11 @@
 [package]
 name = "yew-commons"
 version = "0.1.0"
+description = "Common code for developing yew components"
+authors = ["Gabor Pihaj <me@gaborpihaj.com>"]
+keywords = ["yew", "wasm", "WebAssembly"]
+license = "MIT"
+repository = "https://git.vdx.hu/voidcontext/yew-components"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
