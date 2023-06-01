@@ -134,6 +134,7 @@
               [
                 pkgs.coreutils # timeout
                 pkgs.netcat
+                pkgs.procps #pkill
                 serve-autocomplete-demo
                 cypress
               ]
