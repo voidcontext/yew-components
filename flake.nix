@@ -142,18 +142,16 @@
             text = wrapper ''
               set -e -o pipefail
               serve-autocomplete-demo&
-              echo $! >> server.pid
 
               # shellcheck disable=SC2016
               timeout 30 sh -c 'until nc -z $0 $1; do sleep 1; done' 0.0.0.0 9001
 
               ${prefix}cypress run
-              kill -9 "$(cat server.pid)"
             '';
           };
 
         run-e2e-tests = mkRunE2eTests "" lib.snippets.utils.cleanupWrapper;
-        run-e2e-tests-ci = mkRunE2eTests "-ci" (text: text);
+        run-e2e-tests-ci = mkRunE2eTests "-ci" lib.snippets.utils.cleanupWrapper;
 
         mkApp = derivation: name: {
           apps.${name} = {
