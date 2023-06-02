@@ -1,3 +1,4 @@
+mod bulma;
 mod plain;
 mod render_html;
 
@@ -6,6 +7,7 @@ use std::rc::Rc;
 use web_sys::KeyboardEvent;
 use yew::Callback;
 
+pub use bulma::Bulma;
 pub use plain::Plain;
 pub use render_html::RenderHtml;
 

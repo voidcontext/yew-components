@@ -1,11 +1,14 @@
 use yew::prelude::*;
-use yew_autocomplete::{view::Plain, Autocomplete, Config, ItemResolver, ItemResolverResult};
+use yew_autocomplete::{
+    view::{Bulma, Plain},
+    Autocomplete, Config, ItemResolver, ItemResolverResult,
+};
 use yew_commons::FnProp;
 
-use crate::COUNTRIES;
+use crate::{PageProps, View, COUNTRIES};
 
 #[function_component(Multi)]
-pub fn multi() -> Html {
+pub fn multi(props: &PageProps) -> Html {
     let resolve_items: ItemResolver<String> =
         FnProp::from(|input: String| -> ItemResolverResult<String> {
             let items = COUNTRIES
@@ -22,17 +25,22 @@ pub fn multi() -> Html {
         ..Config::default()
     };
 
+    let view = match props.view {
+        View::Plain => html! { <Plain<String> /> },
+        View::Bulma => html! { <Bulma<String> /> },
+    };
+
     html! {
         <>
-            <h1>{"yew-commons: Autocomplete Demo"}</h1>
-            <h2>{"multi_select: true, show_selected: true"}</h2>
+            <h1 class="title">{"yew-commons: Autocomplete Demo"}</h1>
+            <h2 class="subtitle">{"multi_select: true, show_selected: true"}</h2>
             <div id={ "multi-select" }>
                 <Autocomplete<String>
                     onchange = { Callback::from(|_| ()) }
                     {config}
                     {resolve_items}
                 >
-                    <Plain<String> />
+                    {view}
                 </Autocomplete<String>>
             </div>
         </>

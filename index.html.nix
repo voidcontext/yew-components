@@ -5,11 +5,16 @@ pkgs.writeTextFile {
   text = ''
     <html>
       <head>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
         <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
         <meta name="viewport" content="width=device-width,initial-scale=1">
         <style>${styles}</style>
       </head>
       <body>
+        <section class="section">
+          <div id="app" class="container">
+          </div>
+        </section>
         <!-- Note the usage of `type=module` here as this is an ES6 module -->
         <script type="module">
           // Use ES module import syntax to import functionality from the module

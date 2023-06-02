@@ -1,5 +1,5 @@
 
-["plain"].forEach((theme) => {
+["plain", "bulma"].forEach((theme) => {
 
   describe(`autocomplete spec - simple ${theme}`, () => {
   
@@ -20,14 +20,14 @@
       cy.get('#single-select input[type=text]')
         .type("uni")
 
-      cy.get('#single-select li.autocomplete-item').should('have.length', 3)
+      cy.get('#single-select .autocomplete-item').should('have.length', 3)
     })
     it('generates completion options when input capitalized', () => {
       cy.visit(`http://localhost:9001/${theme}/simple`)
       cy.get('#single-select input[type=text]')
         .type("Uni")
 
-      cy.get('#single-select li.autocomplete-item').should('have.length', 3)
+      cy.get('#single-select .autocomplete-item').should('have.length', 3)
     })
   
     it('clear autocomplete items if we delete enough chars', () => {
@@ -35,12 +35,13 @@
       cy.get('#single-select input[type=text]')
         .type("uni")
 
-      cy.get('#single-select li.autocomplete-item').should('have.length', 3)
+      cy.get('#single-select .autocomplete-item').should('have.length', 3)
     
       cy.get('#single-select input[type=text]')
         .type("{backspace}")
 
-      cy.get('#single-select li.autocomplete-item').should('have.length', 0)
+      cy.get('#single-select .autocomplete-items').should('not.exist')
+      cy.get('#single-select .autocomplete-item').should('have.length', 0)
     })
   
     it('should hihglight selected item', () => {
@@ -48,17 +49,17 @@
       cy.get('#single-select input[type=text]')
         .type("uni{downArrow}")
 
-      cy.get('#single-select li.autocomplete-item.highlighted').should('have.text', "United Arab Emirates")
+      cy.get('#single-select .autocomplete-item.highlighted').should('have.text', "United Arab Emirates")
     
       cy.get('#single-select input[type=text]')
         .type("{downArrow}")
 
-      cy.get('#single-select li.autocomplete-item.highlighted').should('have.text', "United Kingdom")
+      cy.get('#single-select .autocomplete-item.highlighted').should('have.text', "United Kingdom")
 
       cy.get('#single-select input[type=text]')
         .type("{upArrow}")
 
-      cy.get('#single-select li.autocomplete-item.highlighted').should('have.text', "United Arab Emirates")
+      cy.get('#single-select .autocomplete-item.highlighted').should('have.text', "United Arab Emirates")
     })
 
     // Skipping this test since the `type`'s behavour is not the same is as typing in the browser so
@@ -71,7 +72,7 @@
       cy.get('#single-select input[type=text]')
         .should('have.value', "united")
     
-      cy.get('#single-select li.autocomplete-item').should('have.length', 3)
+      cy.get('#single-select .autocomplete-item').should('have.length', 3)
     })
   
     it('should select hihglighted item', () => {

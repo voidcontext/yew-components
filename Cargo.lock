@@ -903,6 +903,7 @@ name = "yew-autocomplete"
 version = "0.1.0"
 dependencies = [
  "futures",
+ "gloo-utils",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "wasm-bindgen-test",
