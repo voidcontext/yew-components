@@ -32,7 +32,7 @@ pub fn multi(props: &PageProps) -> Html {
 
     html! {
         <>
-            <h1 class="title">{"yew-commons: Autocomplete Demo"}</h1>
+            <h1 class="title">{"yew-components: Autocomplete Demo"}</h1>
             <h2 class="subtitle">{"multi_select: true, show_selected: true"}</h2>
             <div id={ "multi-select" }>
                 <Autocomplete<String>

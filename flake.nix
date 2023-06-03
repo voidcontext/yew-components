@@ -24,8 +24,8 @@
           }
         '';
 
-        yew-commons = lib.mkWasmCrate {
-          pname = "yew-commons-all";
+        yew-components = lib.mkWasmCrate {
+          pname = "yew-components-all";
           version = "0.1.0";
           src = ./.;
           # Nodejs is need by wasm-bindgen-test
@@ -35,7 +35,7 @@
         example = name:
         # TODO: find a better way to build examples
           lib.mkWasmCrate {
-            pname = "yew-commons-${name}-demo";
+            pname = "yew-components-${name}-demo";
             version = "0.1.0";
             src = ./.;
             packageAttrs.checkInputs = [pkgs.nodejs];
@@ -175,15 +175,15 @@
           builtins.foldl' pkgs.lib.recursiveUpdate {} derivations;
       in (apps
         // {
-          packages.default = yew-commons.package;
+          packages.default = yew-components.package;
 
-          checks.default = yew-commons.package;
+          checks.default = yew-components.package;
           checks.run-e2e-tests = run-e2e-tests;
           checks.run-e2e-tests-ci = run-e2e-tests-ci;
           checks.serve-autocomplete-demo = serve-autocomplete-demo;
           checks.nix-formatting = check-nix-formatting;
 
-          devShells.default = (lib.mkDevShell yew-commons).overrideAttrs (old: {
+          devShells.default = (lib.mkDevShell yew-components).overrideAttrs (old: {
             buildInputs =
               old.buildInputs
               ++ [

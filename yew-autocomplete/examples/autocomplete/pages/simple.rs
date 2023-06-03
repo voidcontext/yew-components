@@ -35,7 +35,7 @@ pub fn simple(props: &PageProps) -> Html {
 
     html! {
         <>
-            <h1 class="title">{"yew-commons: Autocomplete Demo"}</h1>
+            <h1 class="title">{"yew-components: Autocomplete Demo"}</h1>
             <h2 class="subtitle">{"multi_select: false, show_selected: false"}</h2>
             <div id={ "single-select" }>
                 <p class="block">{ if countries.is_empty() { html!{ "No countries has been selected."}} else { html!{ format!("Selected country: {}", countries.join(", ")) }} } </p>
