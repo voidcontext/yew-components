@@ -17,6 +17,7 @@ use crate::Config;
 pub struct InputCallbacks {
     pub on_input: Callback<String>,
     pub on_keydown: Callback<KeyboardEvent>,
+    pub select_item: Callback<usize>,
 }
 
 #[derive(Clone, PartialEq)]

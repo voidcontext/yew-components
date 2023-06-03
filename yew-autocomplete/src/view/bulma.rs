@@ -80,13 +80,18 @@ impl<T: 'static + Clone + PartialEq + RenderHtml> Component for Bulma<T> {
             .enumerate()
             .map(|(index, value)| {
                 let mut classes = vec!["dropdown-item autocomplete-item"];
+                let select_item = self.view_context.callbacks.select_item.clone();
+                let onclick = Callback::from(move |e: MouseEvent| {
+                    e.prevent_default();
+                    select_item.emit(index);
+                });
 
                 if self.view_context.highlighted.iter().any(|h| *h == index) {
                     classes.push("highlighted");
                     classes.push("is-active");
                 }
 
-                html! { <a class={classes!(classes)}>{value.render()}</a>}
+                html! { <a class={classes!(classes)} {onclick}>{value.render()}</a>}
             })
             .collect::<Html>();
         let selected_lis = self

@@ -50,6 +50,7 @@ pub enum Msg<T> {
     OnInput(String),
     OnKeydown(u32),
     SetItems(Vec<T>),
+    SelectItem(usize),
     Noop,
 }
 
@@ -114,6 +115,10 @@ where
                 self.state.set_items(items);
                 true
             }
+            Msg::SelectItem(index) => {
+                self.state.select_item(index);
+                true
+            }
             Msg::Noop => false,
         }
     }
@@ -135,6 +140,7 @@ where
 
                 Msg::OnKeydown(code)
             }),
+            select_item: ctx.link().callback(Msg::SelectItem),
         };
         let selected_items = if ctx.props().config.show_selected {
             Rc::new(self.state.selected_items())

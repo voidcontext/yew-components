@@ -82,6 +82,16 @@
 
       cy.get('#single-select p').should('have.text', "Selected country: United Kingdom")
     })
+
+    it('should select clicked item', () => {
+      cy.visit(`http://localhost:9001/${theme}/simple`)
+      cy.get('#single-select input[type=text]')
+        .type("united")
+
+      cy.get(".autocomplete-item:nth(1)").click()
+
+      cy.get('#single-select p').should('have.text', "Selected country: United Kingdom")
+    })
   
     it('should hide the list of selected items', () => {
       cy.visit(`http://localhost:9001/${theme}/simple`)

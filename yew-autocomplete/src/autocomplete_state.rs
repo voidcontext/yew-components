@@ -90,6 +90,7 @@ where
     pub fn highlighted_item(&self) -> Option<usize> {
         self.highlighted_item
     }
+
     pub fn set_highlight_item(&mut self, direction: &HighlightDirection) {
         match direction {
             HighlightDirection::Next => {
@@ -116,20 +117,24 @@ where
 
     pub fn select_current(&mut self) {
         if let Some(selected) = self.highlighted_item {
-            if self.config.multi_select {
-                if !self
-                    .selected_items
-                    .iter()
-                    .any(|item| *item == self.items[selected])
-                {
-                    self.selected_items.push(self.items[selected].clone());
-                }
-            } else {
-                self.selected_items = vec![self.items[selected].clone()];
-            }
-
-            self.onselect.emit(self.selected_items.clone());
+            self.select_item(selected);
         }
+    }
+
+    pub fn select_item(&mut self, index: usize) {
+        if self.config.multi_select {
+            if !self
+                .selected_items
+                .iter()
+                .any(|item| *item == self.items[index])
+            {
+                self.selected_items.push(self.items[index].clone());
+            }
+        } else {
+            self.selected_items = vec![self.items[index].clone()];
+        }
+
+        self.onselect.emit(self.selected_items.clone());
     }
 }
 
@@ -466,6 +471,83 @@ mod tests {
 
         state.set_highlight_item(&HighlightDirection::Next);
         state.select_current();
+
+        assert_eq!(
+            *emitted.lock().unwrap(),
+            vec![
+                vec!["foo".to_string()],
+                vec!["foo".to_string(), "bar".to_string()]
+            ]
+        );
+    }
+
+    #[wasm_bindgen_test]
+    fn test_select_current_item_select_currently_highlighted_item() {
+        let mut state = AutocompleteState::<&str>::new(false, noop_callback());
+
+        state.set_items(vec!["foo", "bar", "baz"]);
+
+        state.select_item(1);
+
+        assert_eq!(state.selected_items(), vec!["bar"]);
+    }
+
+    #[wasm_bindgen_test]
+    fn test_select_item_should_replace_the_selected_item_when_not_multi() {
+        let mut state = AutocompleteState::<&str>::new(false, noop_callback());
+
+        state.set_items(vec!["foo", "bar", "baz"]);
+
+        state.select_item(0);
+        state.select_item(1);
+
+        assert_eq!(state.selected_items(), vec!["bar"]);
+    }
+    #[wasm_bindgen_test]
+    fn test_select_item_should_select_multiple_items_if_configured() {
+        let mut state = AutocompleteState::<&str>::new(true, noop_callback());
+
+        state.set_items(vec!["foo", "bar", "baz"]);
+
+        state.select_item(0);
+        state.select_item(1);
+
+        assert_eq!(state.selected_items(), vec!["foo", "bar"]);
+    }
+
+    #[wasm_bindgen_test]
+    fn test_select_item_should_never_select_the_same_item_twice() {
+        let mut state = AutocompleteState::<&str>::new(true, noop_callback());
+
+        state.set_items(vec!["foo", "bar", "baz"]);
+
+        state.select_item(0);
+        state.select_item(0);
+
+        assert_eq!(state.selected_items(), vec!["foo"]);
+    }
+
+    #[wasm_bindgen_test]
+    fn test_select_item_should_emit_onselect_callback() {
+        let emitted = Arc::new(Mutex::new(Vec::<Vec<String>>::new()));
+        let onselect = {
+            let emitted = Arc::clone(&emitted);
+            Callback::from(move |strs: Vec<String>| {
+                let mut guard = emitted.lock().unwrap();
+                (*guard).push(strs);
+            })
+        };
+
+        let mut state = AutocompleteState::<String>::new(true, onselect);
+
+        state.set_items(vec![
+            "foo".to_string(),
+            "bar".to_string(),
+            "baz".to_string(),
+        ]);
+
+        state.select_item(0);
+        state.select_item(1);
 
         assert_eq!(
             *emitted.lock().unwrap(),

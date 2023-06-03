@@ -79,13 +79,19 @@ impl<T: 'static + Clone + PartialEq + RenderHtml> Component for Plain<T> {
             .iter()
             .enumerate()
             .map(|(index, value)| {
+                let select_item = self.view_context.callbacks.select_item.clone();
+                let onclick = Callback::from(move |e: MouseEvent| {
+                    e.prevent_default();
+                    select_item.emit(index);
+                });
+
                 let mut classes = vec!["autocomplete-item"];
 
                 if self.view_context.highlighted.iter().any(|h| *h == index) {
                     classes.push("highlighted");
                 }
 
-                html! { <li class={classes!(classes)}>{value.render()}</li>}
+                html! { <li><a class={classes!(classes)} {onclick}>{value.render()}</a></li>}
             })
             .collect::<Html>();
         let selected_lis = self
@@ -93,7 +99,7 @@ impl<T: 'static + Clone + PartialEq + RenderHtml> Component for Plain<T> {
             .selected_items
             .iter()
             .map(|value| {
-                html! { <li class={classes!("autocomplete-item", "selected")}>{value.render()}</li>}
+                html! { <li class={classes!("autocomplete-item", "selected")}>{value.render()}</li> }
             })
             .collect::<Html>();
 
