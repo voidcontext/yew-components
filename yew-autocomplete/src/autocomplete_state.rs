@@ -7,7 +7,7 @@ pub enum HighlightDirection {
     Next,
 }
 
-pub struct AutocompleteState<T, D: Dispatcher<Msg<T>>> {
+pub(crate) struct AutocompleteState<T, D: Dispatcher<Msg<T>>> {
     // State
     input: String,
     items: Vec<T>,

@@ -40,7 +40,7 @@ pub enum Msg<T> {
     Noop,
 }
 
-pub trait Dispatcher<T> {
+pub(crate) trait Dispatcher<T> {
     fn dispatch(&self, future: Pin<Box<dyn Future<Output = T>>>);
 }
 
