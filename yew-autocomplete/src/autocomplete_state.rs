@@ -7,7 +7,7 @@ pub enum HighlightDirection {
     Next,
 }
 
-pub struct AutocompleteState<T> {
+pub struct AutocompleteState<T, D: Dispatcher<Msg<T>>> {
     // State
     input: String,
     items: Vec<T>,
@@ -15,37 +15,37 @@ pub struct AutocompleteState<T> {
     selected_items: Vec<T>,
     onselect: Callback<Vec<T>>,
 
+    dispatcher: D,
+    item_resolver: ItemResolver<T>,
+
     // Props
     config: Config,
 }
 
-impl<T> Default for AutocompleteState<T> {
-    fn default() -> Self {
-        Self {
-            input: String::default(),
-            items: Vec::default(),
-            highlighted_item: None,
-            selected_items: Vec::default(),
-            onselect: Callback::from(|_| ()),
-            config: Config::default(),
-        }
-    }
-}
-
-impl<T> AutocompleteState<T>
+impl<T, D: Dispatcher<Msg<T>>> AutocompleteState<T, D>
 where
     T: 'static + Clone + PartialEq,
 {
-    pub fn new(multi_select: bool, onselect: Callback<Vec<T>>) -> Self {
+    pub fn new(
+        multi_select: bool,
+        onselect: Callback<Vec<T>>,
+        dispatcher: D,
+        item_resolver: ItemResolver<T>,
+    ) -> Self {
         let config = Config {
             multi_select,
             ..Config::default()
         };
 
         Self {
+            input: String::default(),
+            items: Vec::default(),
+            highlighted_item: None,
+            selected_items: Vec::default(),
+            dispatcher,
+            item_resolver,
             onselect,
             config,
-            ..Self::default()
         }
     }
 
@@ -54,11 +54,11 @@ where
         self.input.clone()
     }
 
-    pub fn oninput<D: Dispatcher<Msg<T>>>(
+    pub fn oninput(
         &mut self,
         value: &str,
-        dispatcher: D,
-        item_resolver: ItemResolver<T>,
+        // dispatcher: D,
+        // item_resolver: ItemResolver<T>,
     ) {
         self.input = value.to_string();
 
@@ -66,7 +66,8 @@ where
 
         // TODO: make the min length configurable
         if string.len() > 2 {
-            dispatcher.dispatch(Box::pin(async move {
+            let item_resolver = self.item_resolver.clone();
+            self.dispatcher.dispatch(Box::pin(async move {
                 let items = (item_resolver.fun)(string).await;
 
                 Msg::SetItems(items.unwrap())
@@ -151,17 +152,17 @@ mod tests {
 
     use super::{AutocompleteState, HighlightDirection};
 
-    use futures::{channel::oneshot::Sender, Future};
+    use futures::{channel::mpsc::Receiver, Future, StreamExt};
     use wasm_bindgen_futures::spawn_local;
     use wasm_bindgen_test::wasm_bindgen_test;
 
     use yew::Callback;
     use yew_commons::FnProp;
 
-    type PinnedFuture<T> = Pin<Box<dyn Future<Output = T> + 'static>>;
+    type PinnedFuture<T> = Pin<Box<dyn Future<Output = T>>>;
 
     struct DispatcherMock<T> {
-        f: Box<dyn FnOnce(PinnedFuture<T>)>,
+        f: Box<dyn Fn(PinnedFuture<T>)>,
         _t: PhantomData<T>,
     }
 
@@ -173,16 +174,21 @@ mod tests {
             }
         }
 
-        fn forward(tx: Sender<T>) -> Self {
-            Self {
-                f: Box::new(|f| {
+        fn forward() -> (Self, Receiver<T>) {
+            let (tx, rx) = futures::channel::mpsc::channel::<T>(10);
+
+            let state = Self {
+                f: Box::new(move |f| {
+                    let mut tx = tx.clone();
                     spawn_local(async move {
                         let msg = f.await;
-                        tx.send(msg).unwrap();
+                        tx.try_send(msg).unwrap();
                     });
                 }),
                 _t: PhantomData,
-            }
+            };
+
+            (state, rx)
         }
 
         fn never_called() -> Self {
@@ -200,73 +206,76 @@ mod tests {
     }
 
     impl<T> Dispatcher<T> for DispatcherMock<T> {
-        fn dispatch(self, future: Pin<Box<dyn futures::Future<Output = T>>>) {
+        fn dispatch(&self, future: Pin<Box<dyn futures::Future<Output = T>>>) {
             (self.f)(future);
         }
+    }
+
+    fn not_resolved_default_state<T: std::fmt::Debug + Clone + PartialEq + 'static>(
+        multi: bool,
+    ) -> AutocompleteState<T, DispatcherMock<Msg<T>>> {
+        AutocompleteState::new(
+            multi,
+            noop_callback(),
+            DispatcherMock::never_called(),
+            FnProp::from(|_s: String| -> ItemResolverResult<T> {
+                panic!("Shouldn't be called");
+            }),
+        )
     }
 
     // --- oninput
 
     #[wasm_bindgen_test]
     fn test_oninput_sets_input_value() {
-        let mut state = AutocompleteState::default();
-
-        state.oninput(
-            "this is a text",
+        let mut state = AutocompleteState::new(
+            false,
+            noop_callback(),
             DispatcherMock::noop(),
             FnProp::from(|_s: String| -> ItemResolverResult<String> {
                 Box::pin(futures::future::ok(vec![]))
             }),
         );
 
-        assert_eq!(state.input, "this is a text");
+        state.oninput("this is a text");
+
+        assert_eq!(state.input(), "this is a text");
     }
 
     #[wasm_bindgen_test]
     async fn test_oninput_should_resolve_autocomplete_items() {
-        let mut state = AutocompleteState::default();
+        let (dispatcher, rx) = DispatcherMock::forward();
 
-        let (tx, rx) = futures::channel::oneshot::channel::<Msg<String>>();
-
-        state.oninput(
-            "this is a text",
-            DispatcherMock::forward(tx),
+        let mut state = AutocompleteState::new(
+            false,
+            noop_callback(),
+            dispatcher,
             FnProp::from(|_s: String| -> ItemResolverResult<String> {
                 Box::pin(futures::future::ok(vec!["result".to_string()]))
             }),
         );
 
-        let sent = rx.await.unwrap();
-        assert_eq!(sent, Msg::SetItems(vec!["result".to_string()]));
+        state.oninput("this is a text");
+
+        let (sent, _) = rx.into_future().await;
+        assert_eq!(sent.unwrap(), Msg::SetItems(vec!["result".to_string()]));
     }
 
     #[wasm_bindgen_test]
     fn test_oninput_should_not_resolve_autocomplete_items_when_input_is_short() {
-        let mut state = AutocompleteState::default();
+        let mut state = not_resolved_default_state::<&str>(false);
 
-        state.oninput(
-            "th",
-            DispatcherMock::never_called(),
-            FnProp::from(|_s: String| -> ItemResolverResult<String> {
-                panic!("Shouldn't be called");
-            }),
-        );
+        state.oninput("th");
 
         assert_eq!(state.input(), "th".to_string());
     }
 
     #[wasm_bindgen_test]
     fn test_oninput_should_clear_items_when_input_is_short() {
-        let mut state = AutocompleteState::default();
-        state.set_items(vec!["one".to_string(), "two".to_string()]);
+        let mut state = not_resolved_default_state::<&str>(false);
+        state.set_items(vec!["one", "two"]);
 
-        state.oninput(
-            "th",
-            DispatcherMock::never_called(),
-            FnProp::from(|_s: String| -> ItemResolverResult<String> {
-                panic!("Shouldn't be called")
-            }),
-        );
+        state.oninput("th");
 
         assert_eq!(state.items(), Vec::<String>::new());
     }
@@ -275,7 +284,7 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn test_set_items_sets_the_items() {
-        let mut state = AutocompleteState::default();
+        let mut state = not_resolved_default_state::<&str>(false);
 
         state.set_items(vec!["one"]);
 
@@ -288,7 +297,7 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn test_set_items_resets_the_highlighted_item() {
-        let mut state = AutocompleteState::default();
+        let mut state = not_resolved_default_state::<&str>(false);
 
         state.set_items(vec!["one"]);
         state.set_highlight_item(&HighlightDirection::Next);
@@ -300,13 +309,13 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn test_there_is_not_any_highlighted_items_by_default() {
-        let state = AutocompleteState::<&str>::default();
+        let state = not_resolved_default_state::<&str>(false);
         assert_eq!(state.highlighted_item(), None);
     }
 
     #[wasm_bindgen_test]
     fn test_highlight_item_next_should_highlight_first_when_no_highlighted_and_there_are_items() {
-        let mut state = AutocompleteState::<&str>::default();
+        let mut state = not_resolved_default_state::<&str>(false);
 
         state.set_items(vec!["foo", "bar", "baz"]);
 
@@ -317,7 +326,7 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn test_highlight_item_next_should_highlight_nothing_when_there_are_not_any_items() {
-        let mut state = AutocompleteState::<&str>::default();
+        let mut state = not_resolved_default_state::<&str>(false);
 
         state.set_highlight_item(&HighlightDirection::Next);
 
@@ -326,7 +335,7 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn test_highlight_item_next_should_highlight_next() {
-        let mut state = AutocompleteState::<&str>::default();
+        let mut state = not_resolved_default_state::<&str>(false);
 
         state.set_items(vec!["foo", "bar", "baz"]);
 
@@ -338,7 +347,7 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn test_highlight_item_next_should_stop_at_the_end() {
-        let mut state = AutocompleteState::<&str>::default();
+        let mut state = not_resolved_default_state::<&str>(false);
 
         state.set_items(vec!["foo"]);
 
@@ -350,7 +359,7 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn test_highlight_item_previous_should_highlight_previous() {
-        let mut state = AutocompleteState::<&str>::default();
+        let mut state = not_resolved_default_state::<&str>(false);
 
         state.set_items(vec!["foo", "bar", "baz"]);
 
@@ -363,7 +372,7 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn test_highlight_item_previous_should_stop_at_first() {
-        let mut state = AutocompleteState::<&str>::default();
+        let mut state = not_resolved_default_state::<&str>(false);
 
         state.set_items(vec!["foo", "bar", "baz"]);
 
@@ -377,7 +386,7 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn test_highlight_item_previous_should_highlight_nothing_when_there_are_not_any_items() {
-        let mut state = AutocompleteState::<&str>::default();
+        let mut state = not_resolved_default_state::<&str>(false);
 
         state.set_highlight_item(&HighlightDirection::Previous);
 
@@ -387,13 +396,13 @@ mod tests {
     // --- select items
     #[wasm_bindgen_test]
     fn test_selected_items_is_empty_by_default() {
-        let state = AutocompleteState::<&str>::default();
+        let state = not_resolved_default_state::<&str>(false);
         assert_eq!(state.selected_items(), Vec::<&str>::new());
     }
 
     #[wasm_bindgen_test]
     fn test_select_current_should_select_currently_highlighted_item() {
-        let mut state = AutocompleteState::<&str>::new(false, noop_callback());
+        let mut state = not_resolved_default_state::<&str>(false);
 
         state.set_items(vec!["foo", "bar", "baz"]);
 
@@ -407,7 +416,7 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn test_select_current_should_replace_the_selected_item_when_not_multi() {
-        let mut state = AutocompleteState::<&str>::new(false, noop_callback());
+        let mut state = not_resolved_default_state::<&str>(false);
 
         state.set_items(vec!["foo", "bar", "baz"]);
 
@@ -421,7 +430,7 @@ mod tests {
     }
     #[wasm_bindgen_test]
     fn test_select_current_should_select_multiple_items_if_configured() {
-        let mut state = AutocompleteState::<&str>::new(true, noop_callback());
+        let mut state = not_resolved_default_state::<&str>(true);
 
         state.set_items(vec!["foo", "bar", "baz"]);
 
@@ -436,7 +445,7 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn test_select_current_should_never_select_the_same_item_twice() {
-        let mut state = AutocompleteState::<&str>::new(true, noop_callback());
+        let mut state = not_resolved_default_state::<&str>(false);
 
         state.set_items(vec!["foo", "bar", "baz"]);
 
@@ -458,7 +467,14 @@ mod tests {
             })
         };
 
-        let mut state = AutocompleteState::<String>::new(true, onselect);
+        let mut state = AutocompleteState::new(
+            true,
+            onselect,
+            DispatcherMock::never_called(),
+            FnProp::from(|_s: String| -> ItemResolverResult<String> {
+                panic!("Shouldn't be called")
+            }),
+        );
 
         state.set_items(vec![
             "foo".to_string(),
@@ -483,7 +499,7 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn test_select_current_item_select_currently_highlighted_item() {
-        let mut state = AutocompleteState::<&str>::new(false, noop_callback());
+        let mut state = not_resolved_default_state::<&str>(false);
 
         state.set_items(vec!["foo", "bar", "baz"]);
 
@@ -494,7 +510,7 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn test_select_item_should_replace_the_selected_item_when_not_multi() {
-        let mut state = AutocompleteState::<&str>::new(false, noop_callback());
+        let mut state = not_resolved_default_state::<&str>(false);
 
         state.set_items(vec!["foo", "bar", "baz"]);
 
@@ -505,7 +521,7 @@ mod tests {
     }
     #[wasm_bindgen_test]
     fn test_select_item_should_select_multiple_items_if_configured() {
-        let mut state = AutocompleteState::<&str>::new(true, noop_callback());
+        let mut state = not_resolved_default_state::<&str>(true);
 
         state.set_items(vec!["foo", "bar", "baz"]);
 
@@ -517,7 +533,7 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn test_select_item_should_never_select_the_same_item_twice() {
-        let mut state = AutocompleteState::<&str>::new(true, noop_callback());
+        let mut state = not_resolved_default_state::<&str>(false);
 
         state.set_items(vec!["foo", "bar", "baz"]);
 
@@ -538,7 +554,14 @@ mod tests {
             })
         };
 
-        let mut state = AutocompleteState::<String>::new(true, onselect);
+        let mut state = AutocompleteState::new(
+            true,
+            onselect,
+            DispatcherMock::never_called(),
+            FnProp::from(|_s: String| -> ItemResolverResult<String> {
+                panic!("Shouldn't be called")
+            }),
+        );
 
         state.set_items(vec![
             "foo".to_string(),

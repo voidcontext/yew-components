@@ -31,8 +31,8 @@ pub type ItemResolverResult<T> = Pin<Box<dyn Future<Output = Result<Vec<T>, ()>>
 /// the `Autocomplete` input and returns a Vec of Ts
 pub type ItemResolver<T> = FnProp<String, ItemResolverResult<T>>;
 
-pub struct Autocomplete<T> {
-    state: AutocompleteState<T>,
+pub struct Autocomplete<T: Clone + PartialEq + RenderHtml + 'static> {
+    state: AutocompleteState<T, ComponentDispatcher<Self>>,
 }
 
 #[derive(PartialEq, Properties, Clone)]
@@ -55,8 +55,7 @@ pub enum Msg<T> {
 }
 
 pub trait Dispatcher<T> {
-    // we could use &self, but in the tests we need to use an FnOnce to be able pass in a Sender<Msg>
-    fn dispatch(self, future: Pin<Box<dyn Future<Output = T>>>);
+    fn dispatch(&self, future: Pin<Box<dyn Future<Output = T>>>);
 }
 
 struct ComponentDispatcher<C: Component> {
@@ -70,7 +69,7 @@ impl<C: Component> ComponentDispatcher<C> {
 }
 
 impl<C: Component> Dispatcher<C::Message> for ComponentDispatcher<C> {
-    fn dispatch(self, future: Pin<Box<dyn Future<Output = C::Message>>>) {
+    fn dispatch(&self, future: Pin<Box<dyn Future<Output = C::Message>>>) {
         self.link.send_future(future);
     }
 }
@@ -88,18 +87,16 @@ where
             state: AutocompleteState::new(
                 ctx.props().config.multi_select,
                 ctx.props().onchange.clone(),
+                ComponentDispatcher::new(ctx.link().clone()),
+                ctx.props().resolve_items.clone(),
             ),
         }
     }
 
-    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::OnInput(value) => {
-                self.state.oninput(
-                    value.as_str(),
-                    ComponentDispatcher::new(ctx.link().clone()),
-                    ctx.props().resolve_items.clone(),
-                );
+                self.state.oninput(value.as_str());
                 true
             }
             Msg::OnKeydown(key) => {
