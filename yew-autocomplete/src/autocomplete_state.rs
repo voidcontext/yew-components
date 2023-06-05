@@ -1,13 +1,13 @@
 use yew::Callback;
 
-use crate::{Config, Dispatcher, ItemResolver, Msg};
+use crate::{AsyncCallback, Config, ItemResolver, Msg};
 
 pub enum HighlightDirection {
     Previous,
     Next,
 }
 
-pub(crate) struct AutocompleteState<T, D: Dispatcher<Msg<T>>> {
+pub(crate) struct AutocompleteState<T, D: AsyncCallback<Msg<T>>> {
     // State
     input: String,
     items: Vec<T>,
@@ -22,7 +22,7 @@ pub(crate) struct AutocompleteState<T, D: Dispatcher<Msg<T>>> {
     config: Config,
 }
 
-impl<T, D: Dispatcher<Msg<T>>> AutocompleteState<T, D>
+impl<T, D: AsyncCallback<Msg<T>>> AutocompleteState<T, D>
 where
     T: 'static + Clone + PartialEq,
 {
@@ -54,12 +54,7 @@ where
         self.input.clone()
     }
 
-    pub fn oninput(
-        &mut self,
-        value: &str,
-        // dispatcher: D,
-        // item_resolver: ItemResolver<T>,
-    ) {
+    pub fn oninput(&mut self, value: &str) {
         self.input = value.to_string();
 
         let string = self.input.clone();
@@ -148,7 +143,7 @@ mod tests {
         sync::{Arc, Mutex},
     };
 
-    use crate::{Dispatcher, ItemResolverResult, Msg};
+    use crate::{AsyncCallback, ItemResolverResult, Msg};
 
     use super::{AutocompleteState, HighlightDirection};
 
@@ -205,7 +200,7 @@ mod tests {
         Callback::from(|_| ())
     }
 
-    impl<T> Dispatcher<T> for DispatcherMock<T> {
+    impl<T> AsyncCallback<T> for DispatcherMock<T> {
         fn dispatch(&self, future: Pin<Box<dyn futures::Future<Output = T>>>) {
             (self.f)(future);
         }
