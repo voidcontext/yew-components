@@ -10,19 +10,19 @@ use crate::{
     view::{self, InputCallbacks, RenderHtml},
 };
 
-/// The async result of the `ItemResolver`
+/// The async result of the [`ItemResolver`]
 pub type ItemResolverResult<T> = Pin<Box<dyn Future<Output = Result<Vec<T>, ()>>>>;
 
-/// `ItemResolver` is an async function that can be passed as a Prop, that takes the current value of
-/// the `Autocomplete` input and returns a Vec of Ts
+/// [`ItemResolver`] is an async function that can be passed as a Prop, that takes the current value of
+/// the [`Autocomplete`] input and returns a Vec of Ts
 pub type ItemResolver<T> = FnProp<String, ItemResolverResult<T>>;
 
-/// A Yew.rs [`Component`] with highly configurable auto completion capabilites
+/// A Yew.rs [Component] with highly configurable auto completion capabilites
 pub struct Autocomplete<T: Clone + PartialEq + RenderHtml + 'static> {
     state: AutocompleteState<T, AsyncMessageCallback<Self>>,
 }
 
-/// Properties of the [`Autocomplete`] component
+/// Properties of the [Autocomplete] component
 #[derive(PartialEq, Properties, Clone)]
 pub struct Props<T: PartialEq> {
     pub resolve_items: ItemResolver<T>,
@@ -33,7 +33,7 @@ pub struct Props<T: PartialEq> {
     pub config: Config,
 }
 
-/// Internal messages of the [`Autocomplete`] component
+/// Internal messages of the [Autocomplete] component
 #[derive(Debug, PartialEq)]
 pub enum Msg<T> {
     OnInput(String),
@@ -49,14 +49,14 @@ pub(crate) trait AsyncCallback<T> {
     fn dispatch(&self, future: Pin<Box<dyn Future<Output = T>>>);
 }
 
-/// An async callback that is capable of sending an async message (a [Component::Message] wrapped in a Future) to
+/// An async callback that is capable of sending an async message (a [`Component::Message`] wrapped in a Future) to
 /// a component
 struct AsyncMessageCallback<C: Component> {
     link: Scope<C>,
 }
 
 impl<C: Component> AsyncMessageCallback<C> {
-    /// Creates a new AsyncMessageCallback from the [Scope] of a [Component]
+    /// Creates a new [`AsyncMessageCallback`] from the [Scope] of a [Component]
     fn new(link: Scope<C>) -> Self {
         Self { link }
     }
