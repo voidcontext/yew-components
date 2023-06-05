@@ -1,6 +1,5 @@
 use std::{future::Future, pin::Pin, rc::Rc};
 
-use web_sys::HtmlInputElement;
 use yew::{html::Scope, prelude::*};
 use yew_commons::fn_prop::FnProp;
 
@@ -10,19 +9,6 @@ use crate::{
     autocomplete_state::{AutocompleteState, HighlightDirection},
     view::{self, InputCallbacks, RenderHtml},
 };
-
-pub fn make_callback<M, C, E: AsRef<Event>, F: Fn(String) -> M + 'static>(
-    link: &Scope<C>,
-    f: F,
-) -> Callback<E>
-where
-    C: Component<Message = M>,
-{
-    link.callback(move |e: E| {
-        let input = e.target_dyn_into::<HtmlInputElement>().unwrap();
-        f(input.value())
-    })
-}
 
 /// The async result of the `ItemResolver`
 pub type ItemResolverResult<T> = Pin<Box<dyn Future<Output = Result<Vec<T>, ()>>>>;
