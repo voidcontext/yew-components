@@ -188,6 +188,7 @@
               old.buildInputs
               ++ [
                 pkgs.node2nix
+                pkgs.gnused
                 gen-node-packages
                 watch-autocomplete-demo
                 cypress
