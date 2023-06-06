@@ -14,4 +14,16 @@ pipeline:
       - .woodpecker/setup-nix.sh
       - nix run .#run-e2e-tests-ci 2>&1 | nix run "git+https://git.vdx.hu/voidcontext/nix-cache-copy?ref=refs/tags/v0.2.0" -- -t file:///var/lib/woodpecker-agent/nix-store -k /var/lib/woodpecker-agent/nix-store/cache-priv-key.pem
     volumes:
+      - /var/lib/woodpecker-agent/nix-store:/var/lib/woodpecker-agent/nix-store  e2e:
+  publish:
+    image: nixos/nix
+    commands:
+      - set -o pipefail
+      - .woodpecker/setup-nix.sh
+      - nix-env -i gunsed
+      - export PACKAGE=$(echo $CI_COMMIT_TAG | sed 's/-v[0-9]\+\.[0-9]\+\.[0-9]\+.*$//' )
+      - nix develop --command "cargo publish -p $PACKAGE --token $CARGO_API_TOKEN"
+    volumes:
       - /var/lib/woodpecker-agent/nix-store:/var/lib/woodpecker-agent/nix-store
+    when:
+      event: tag
