@@ -1,6 +1,11 @@
 [package]
 name = "yew-autocomplete"
 version = "0.1.0"
+description = "Auto-complete input for yew.rs"
+authors = ["Gabor Pihaj <me@gaborpihaj.com>"]
+keywords = ["yew", "wasm", "WebAssembly"]
+license = "MIT"
+repository = "https://git.vdx.hu/voidcontext/yew-components"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
