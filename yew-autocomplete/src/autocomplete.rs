@@ -13,8 +13,8 @@ use crate::{
 /// The async result of the [`ItemResolver`]
 pub type ItemResolverResult<T> = Pin<Box<dyn Future<Output = Result<Vec<T>, ()>>>>;
 
-/// [`ItemResolver`] is an async function that can be passed as a Prop, that takes the current value of
-/// the [`Autocomplete`] input and returns a Vec of Ts
+/// An async function that can be passed as a Prop, that takes the current value of the
+/// [`Autocomplete`] input and returns a Vec of Ts
 pub type ItemResolver<T> = FnProp<String, ItemResolverResult<T>>;
 
 /// A Yew.rs [Component] with highly configurable auto completion capabilites
