@@ -24,5 +24,6 @@ pipeline:
       - nix develop --command cargo publish -p $PACKAGE --token $CARGO_API_TOKEN
     volumes:
       - /var/lib/woodpecker-agent/nix-store:/var/lib/woodpecker-agent/nix-store
+    secrets: [ cargo_api_token ]
     when:
       event: tag
