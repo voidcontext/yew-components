@@ -11,8 +11,6 @@ pub use bulma::Bulma;
 pub use plain::Plain;
 pub use render_html::RenderHtml;
 
-use crate::Config;
-
 #[derive(Clone, PartialEq)]
 pub struct InputCallbacks {
     pub on_input: Callback<String>,
@@ -27,5 +25,5 @@ pub struct Context<Item: Clone + PartialEq> {
     pub items: Rc<Vec<Item>>,
     pub highlighted: Option<usize>,
     pub selected_items: Rc<Vec<Item>>,
-    pub config: Config,
+    pub auto: bool,
 }

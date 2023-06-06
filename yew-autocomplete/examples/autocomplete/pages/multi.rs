@@ -1,7 +1,7 @@
 use yew::prelude::*;
 use yew_autocomplete::{
     view::{Bulma, Plain},
-    Autocomplete, Config, ItemResolver, ItemResolverResult,
+    Autocomplete, ItemResolver, ItemResolverResult,
 };
 use yew_commons::FnProp;
 
@@ -19,12 +19,6 @@ pub fn multi(props: &PageProps) -> Html {
             Box::pin(futures::future::ok::<_, ()>(items))
         });
 
-    let config = Config {
-        multi_select: true,
-        show_selected: true,
-        ..Config::default()
-    };
-
     let view = match props.view {
         View::Plain => html! { <Plain<String> /> },
         View::Bulma => html! { <Bulma<String> /> },
@@ -37,7 +31,8 @@ pub fn multi(props: &PageProps) -> Html {
             <div id={ "multi-select" }>
                 <Autocomplete<String>
                     onchange = { Callback::from(|_| ()) }
-                    {config}
+                    multi_select = {true}
+                    show_selected = true
                     {resolve_items}
                 >
                     {view}

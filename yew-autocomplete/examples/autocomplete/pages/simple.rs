@@ -1,7 +1,7 @@
 use yew::prelude::*;
 use yew_autocomplete::{
     view::{Bulma, Plain},
-    Autocomplete, Config, ItemResolver, ItemResolverResult,
+    Autocomplete, ItemResolver, ItemResolverResult,
 };
 use yew_commons::FnProp;
 
@@ -26,8 +26,6 @@ pub fn simple(props: &PageProps) -> Html {
         Callback::from(move |selected: Vec<String>| countries.set(selected.clone()))
     };
 
-    let config = Config::default();
-
     let view = match props.view {
         View::Plain => html! { <Plain<String> /> },
         View::Bulma => html! { <Bulma<String> /> },
@@ -42,7 +40,6 @@ pub fn simple(props: &PageProps) -> Html {
                 <Autocomplete<String>
                     onchange = { onchange_single }
                     {resolve_items}
-                    {config}
                 >
                     {view}
                 </Autocomplete<String>>

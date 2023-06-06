@@ -3,8 +3,6 @@ use std::{future::Future, pin::Pin, rc::Rc};
 use yew::{html::Scope, prelude::*};
 use yew_commons::fn_prop::FnProp;
 
-pub use crate::config::Config;
-
 use crate::{
     autocomplete_state::{AutocompleteState, HighlightDirection},
     view::{self, InputCallbacks, RenderHtml},
@@ -29,8 +27,12 @@ pub struct Props<T: PartialEq> {
     pub onchange: Callback<Vec<T>>,
     pub children: Children, // TODO: typed children?
 
-    #[prop_or(Config::default())]
-    pub config: Config,
+    #[prop_or(true)]
+    pub auto: bool,
+    #[prop_or(false)]
+    pub show_selected: bool,
+    #[prop_or(false)]
+    pub multi_select: bool,
 }
 
 /// Internal messages of the [Autocomplete] component
@@ -79,7 +81,7 @@ where
     fn create(ctx: &Context<Self>) -> Self {
         Self {
             state: AutocompleteState::new(
-                ctx.props().config.multi_select,
+                ctx.props().multi_select,
                 ctx.props().onchange.clone(),
                 AsyncMessageCallback::new(ctx.link().clone()),
                 ctx.props().resolve_items.clone(),
@@ -133,7 +135,7 @@ where
             }),
             select_item: ctx.link().callback(Msg::SelectItem),
         };
-        let selected_items = if ctx.props().config.show_selected {
+        let selected_items = if ctx.props().show_selected {
             Rc::new(self.state.selected_items())
         } else {
             Rc::new(Vec::new())
@@ -145,7 +147,7 @@ where
             items: Rc::new(self.state.items()),
             highlighted: self.state.highlighted_item(),
             selected_items,
-            config: ctx.props().config.clone(),
+            auto: ctx.props().auto,
         };
 
         html! {

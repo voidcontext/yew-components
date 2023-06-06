@@ -52,7 +52,7 @@ impl<T: 'static + Clone + PartialEq + RenderHtml> Component for Bulma<T> {
             Msg::OnInput(value) => {
                 self.value = value;
 
-                if self.view_context.config.auto {
+                if self.view_context.auto {
                     self.view_context
                         .callbacks
                         .on_input
@@ -141,7 +141,7 @@ impl<T: 'static + Clone + PartialEq + RenderHtml> Component for Bulma<T> {
                 </div>
                 {
                     render_if(
-                        !self.view_context.config.auto,
+                        !self.view_context.auto,
                         html! {
                             <input type="button" value="Search" onclick={onsearch}/>
                         }

@@ -1,6 +1,6 @@
 use yew::Callback;
 
-use crate::{AsyncCallback, Config, ItemResolver, Msg};
+use crate::{AsyncCallback, ItemResolver, Msg};
 
 pub enum HighlightDirection {
     Previous,
@@ -18,8 +18,7 @@ pub(crate) struct AutocompleteState<T, D: AsyncCallback<Msg<T>>> {
     dispatcher: D,
     item_resolver: ItemResolver<T>,
 
-    // Props
-    config: Config,
+    multi_select: bool,
 }
 
 impl<T, D: AsyncCallback<Msg<T>>> AutocompleteState<T, D>
@@ -32,11 +31,6 @@ where
         dispatcher: D,
         item_resolver: ItemResolver<T>,
     ) -> Self {
-        let config = Config {
-            multi_select,
-            ..Config::default()
-        };
-
         Self {
             input: String::default(),
             items: Vec::default(),
@@ -45,7 +39,7 @@ where
             dispatcher,
             item_resolver,
             onselect,
-            config,
+            multi_select,
         }
     }
 
@@ -118,7 +112,7 @@ where
     }
 
     pub fn select_item(&mut self, index: usize) {
-        if self.config.multi_select {
+        if self.multi_select {
             if !self
                 .selected_items
                 .iter()
