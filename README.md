@@ -4,9 +4,9 @@ A collection of high level components built with [yew.rs](https://yew.rs/)
 
 ### yew-autocomplete
 
-![crates.io badge](https://img.shields.io/crates/v/yew-autocomplete)
+[![crates.io badge](https://img.shields.io/crates/v/yew-autocomplete)](https://crates.io/crates/yew-autocomplete)
 
 ### yew-commons
 
-![crates.io badge](https://img.shields.io/crates/v/yew-commons)
+[![crates.io badge](https://img.shields.io/crates/v/yew-commons)](https://crates.io/crates/yew-commons)
 
