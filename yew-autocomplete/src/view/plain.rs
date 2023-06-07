@@ -13,7 +13,6 @@ pub struct Plain<T: 'static + Clone + PartialEq> {
 
 pub enum Msg<T: 'static + Clone + PartialEq> {
     OnInput(String),
-    Search,
     ViewContextUpdated(super::Context<T>),
 }
 
@@ -46,27 +45,12 @@ impl<T: 'static + Clone + PartialEq + RenderHtml> Component for Plain<T> {
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::ViewContextUpdated(ctx) => {
+                self.value = ctx.value.clone();
                 self.view_context = ctx;
                 true
             }
             Msg::OnInput(value) => {
-                self.value = value;
-
-                if self.view_context.auto {
-                    self.view_context
-                        .callbacks
-                        .on_input
-                        .emit(self.value.clone());
-                    false
-                } else {
-                    true
-                }
-            }
-            Msg::Search => {
-                self.view_context
-                    .callbacks
-                    .on_input
-                    .emit(self.value.clone());
+                self.view_context.callbacks.on_input.emit(value);
                 false
             }
         }
@@ -104,7 +88,7 @@ impl<T: 'static + Clone + PartialEq + RenderHtml> Component for Plain<T> {
             .collect::<Html>();
 
         let oninput = make_callback(ctx.link(), Msg::OnInput);
-        let onsearch = ctx.link().callback(|_| Msg::Search);
+        let onsearch = self.view_context.callbacks.resolve.clone();
 
         html! {
             <div>

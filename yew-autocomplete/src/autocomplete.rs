@@ -42,6 +42,8 @@ pub enum Msg<T> {
     OnKeydown(u32),
     SetItems(Vec<T>),
     SelectItem(usize),
+    Resolve,
+    Reload,
     Noop,
 }
 
@@ -81,6 +83,7 @@ where
     fn create(ctx: &Context<Self>) -> Self {
         Self {
             state: AutocompleteState::new(
+                ctx.props().auto,
                 ctx.props().multi_select,
                 ctx.props().onchange.clone(),
                 AsyncMessageCallback::new(ctx.link().clone()),
@@ -97,12 +100,20 @@ where
             }
             Msg::OnKeydown(key) => {
                 match key {
-                    13 => self.state.select_current(),
-                    38 => self.state.set_highlight_item(&HighlightDirection::Previous),
-                    40 => self.state.set_highlight_item(&HighlightDirection::Next),
-                    _ => (), // Noop
-                };
-                true
+                    13 => {
+                        self.state.select_current();
+                        true
+                    }
+                    38 => {
+                        self.state.set_highlight_item(&HighlightDirection::Previous);
+                        true
+                    }
+                    40 => {
+                        self.state.set_highlight_item(&HighlightDirection::Next);
+                        true
+                    }
+                    _ => false, // Noop
+                }
             }
             Msg::SetItems(items) => {
                 self.state.set_items(items);
@@ -112,6 +123,11 @@ where
                 self.state.select_item(index);
                 true
             }
+            Msg::Resolve => {
+                self.state.resolve();
+                false
+            }
+            Msg::Reload => true,
             Msg::Noop => false,
         }
     }
@@ -133,6 +149,7 @@ where
 
                 Msg::OnKeydown(code)
             }),
+            resolve: ctx.link().callback(|_| Msg::Resolve),
             select_item: ctx.link().callback(Msg::SelectItem),
         };
         let selected_items = if ctx.props().show_selected {

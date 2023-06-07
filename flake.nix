@@ -19,8 +19,12 @@
         node-packages = pkgs.callPackage ./nix/node {};
 
         plainViewCss = ''
-          li.autocomplete-item.highlighted {
-            background: gray;
+          .autocomplete-item {
+            padding: 0.3rem 0.5rem;
+            display: block;
+          }
+          .autocomplete-item.highlighted {
+            background: #ebfffc;;
           }
         '';
 

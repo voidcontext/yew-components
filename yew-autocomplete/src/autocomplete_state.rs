@@ -18,6 +18,7 @@ pub(crate) struct AutocompleteState<T, D: AsyncCallback<Msg<T>>> {
     dispatcher: D,
     item_resolver: ItemResolver<T>,
 
+    auto: bool,
     multi_select: bool,
 }
 
@@ -26,6 +27,7 @@ where
     T: 'static + Clone + PartialEq,
 {
     pub fn new(
+        auto: bool,
         multi_select: bool,
         onselect: Callback<Vec<T>>,
         dispatcher: D,
@@ -39,6 +41,7 @@ where
             dispatcher,
             item_resolver,
             onselect,
+            auto,
             multi_select,
         }
     }
@@ -51,19 +54,24 @@ where
     pub fn oninput(&mut self, value: &str) {
         self.input = value.to_string();
 
-        let string = self.input.clone();
-
         // TODO: make the min length configurable
-        if string.len() > 2 {
-            let item_resolver = self.item_resolver.clone();
-            self.dispatcher.dispatch(Box::pin(async move {
-                let items = (item_resolver.fun)(string).await;
-
-                Msg::SetItems(items.unwrap())
-            }));
+        if self.input.len() > 2 && self.auto {
+            self.resolve()
         } else {
             self.items = vec![];
         }
+    }
+
+    pub fn resolve(&self) {
+        let string = self.input.clone();
+        let item_resolver = self.item_resolver.clone();
+        self.dispatcher.dispatch(Box::pin(async move {
+            let items = (item_resolver.fun)(string).await.unwrap();
+
+            // self.set_items(items);
+
+            Msg::SetItems(items)
+        }));
     }
 
     // ### Items
@@ -124,6 +132,8 @@ where
             self.selected_items = vec![self.items[index].clone()];
         }
 
+        self.input = String::new();
+        self.items = Vec::new();
         self.onselect.emit(self.selected_items.clone());
     }
 }
@@ -204,6 +214,7 @@ mod tests {
         multi: bool,
     ) -> AutocompleteState<T, DispatcherMock<Msg<T>>> {
         AutocompleteState::new(
+            true,
             multi,
             noop_callback(),
             DispatcherMock::never_called(),
@@ -218,6 +229,7 @@ mod tests {
     #[wasm_bindgen_test]
     fn test_oninput_sets_input_value() {
         let mut state = AutocompleteState::new(
+            true,
             false,
             noop_callback(),
             DispatcherMock::noop(),
@@ -236,6 +248,7 @@ mod tests {
         let (dispatcher, rx) = DispatcherMock::forward();
 
         let mut state = AutocompleteState::new(
+            true,
             false,
             noop_callback(),
             dispatcher,
@@ -248,6 +261,23 @@ mod tests {
 
         let (sent, _) = rx.into_future().await;
         assert_eq!(sent.unwrap(), Msg::SetItems(vec!["result".to_string()]));
+    }
+
+    #[wasm_bindgen_test]
+    async fn test_oninput_should_not_resolve_autocomplete_items_when_auto_false() {
+        let mut state = AutocompleteState::new(
+            false,
+            false,
+            noop_callback(),
+            DispatcherMock::never_called(),
+            FnProp::from(|_s: String| -> ItemResolverResult<String> {
+                panic!("Shouldn't be called")
+            }),
+        );
+
+        state.oninput("this is a text");
+
+        assert_eq!(state.input(), "this is a text");
     }
 
     #[wasm_bindgen_test]
@@ -267,6 +297,30 @@ mod tests {
         state.oninput("th");
 
         assert_eq!(state.items(), Vec::<String>::new());
+    }
+
+    // --- resolve
+
+    #[wasm_bindgen_test]
+    async fn test_resolve_should_resolve_autocomplete_items() {
+        let (dispatcher, rx) = DispatcherMock::forward();
+
+        let mut state = AutocompleteState::new(
+            true,
+            false,
+            noop_callback(),
+            dispatcher,
+            FnProp::from(|_s: String| -> ItemResolverResult<String> {
+                Box::pin(futures::future::ok(vec!["result".to_string()]))
+            }),
+        );
+
+        state.oninput("this is a text");
+
+        state.resolve();
+
+        let (sent, _) = rx.into_future().await;
+        assert_eq!(sent.unwrap(), Msg::SetItems(vec!["result".to_string()]));
     }
 
     // --- set_items
@@ -408,10 +462,11 @@ mod tests {
         let mut state = not_resolved_default_state::<&str>(false);
 
         state.set_items(vec!["foo", "bar", "baz"]);
-
         state.set_highlight_item(&HighlightDirection::Next);
         state.select_current();
 
+        state.set_items(vec!["foo", "bar", "baz"]);
+        state.set_highlight_item(&HighlightDirection::Next);
         state.set_highlight_item(&HighlightDirection::Next);
         state.select_current();
 
@@ -422,10 +477,11 @@ mod tests {
         let mut state = not_resolved_default_state::<&str>(true);
 
         state.set_items(vec!["foo", "bar", "baz"]);
-
         state.set_highlight_item(&HighlightDirection::Next);
         state.select_current();
 
+        state.set_items(vec!["foo", "bar", "baz"]);
+        state.set_highlight_item(&HighlightDirection::Next);
         state.set_highlight_item(&HighlightDirection::Next);
         state.select_current();
 
@@ -437,9 +493,11 @@ mod tests {
         let mut state = not_resolved_default_state::<&str>(false);
 
         state.set_items(vec!["foo", "bar", "baz"]);
-
         state.set_highlight_item(&HighlightDirection::Next);
         state.select_current();
+
+        state.set_items(vec!["foo", "bar", "baz"]);
+        state.set_highlight_item(&HighlightDirection::Next);
         state.select_current();
 
         assert_eq!(state.selected_items(), vec!["foo"]);
@@ -458,6 +516,7 @@ mod tests {
 
         let mut state = AutocompleteState::new(
             true,
+            true,
             onselect,
             DispatcherMock::never_called(),
             FnProp::from(|_s: String| -> ItemResolverResult<String> {
@@ -474,6 +533,12 @@ mod tests {
         state.set_highlight_item(&HighlightDirection::Next);
         state.select_current();
 
+        state.set_items(vec![
+            "foo".to_string(),
+            "bar".to_string(),
+            "baz".to_string(),
+        ]);
+        state.set_highlight_item(&HighlightDirection::Next);
         state.set_highlight_item(&HighlightDirection::Next);
         state.select_current();
 
@@ -487,7 +552,7 @@ mod tests {
     }
 
     #[wasm_bindgen_test]
-    fn test_select_current_item_select_currently_highlighted_item() {
+    fn test_select_item_should_select_given_item() {
         let mut state = not_resolved_default_state::<&str>(false);
 
         state.set_items(vec!["foo", "bar", "baz"]);
@@ -498,12 +563,81 @@ mod tests {
     }
 
     #[wasm_bindgen_test]
+    fn test_select_item_should_reset_input_after_selecting_an_item() {
+        let mut state = AutocompleteState::new(
+            true,
+            false,
+            noop_callback(),
+            DispatcherMock::noop(),
+            FnProp::from(|_s: String| -> ItemResolverResult<&'static str> {
+                Box::pin(async { Ok(Vec::new()) })
+            }),
+        );
+
+        state.oninput("foo");
+        assert_eq!(state.input(), "foo");
+
+        // imitate setting the items from dispatcher
+        state.set_items(vec!["foo", "foobar"]);
+
+        state.select_item(1);
+
+        assert_eq!(state.input(), "");
+    }
+
+    #[wasm_bindgen_test]
+    fn test_select_item_should_reset_items_after_selecting_an_item() {
+        let mut state = AutocompleteState::new(
+            true,
+            false,
+            noop_callback(),
+            DispatcherMock::noop(),
+            FnProp::from(|_s: String| -> ItemResolverResult<&'static str> {
+                Box::pin(async { Ok(Vec::new()) })
+            }),
+        );
+
+        state.oninput("foo");
+        assert_eq!(state.input(), "foo");
+
+        // imitate setting the items from dispatcher
+        state.set_items(vec!["foo", "foobar"]);
+
+        state.select_item(1);
+
+        assert_eq!(state.items(), Vec::<&str>::new());
+    }
+
+    #[wasm_bindgen_test]
+    fn test_select_item_should_reset_highlighted_items_after_selecting_an_item() {
+        let mut state = AutocompleteState::new(
+            true,
+            false,
+            noop_callback(),
+            DispatcherMock::noop(),
+            FnProp::from(|_s: String| -> ItemResolverResult<&'static str> {
+                Box::pin(async { Ok(Vec::new()) })
+            }),
+        );
+
+        state.oninput("foo");
+        assert_eq!(state.input(), "foo");
+
+        // imitate setting the items from dispatcher
+        state.set_items(vec!["foo", "foobar"]);
+
+        state.select_item(1);
+
+        assert_eq!(state.highlighted_item(), None);
+    }
+    #[wasm_bindgen_test]
     fn test_select_item_should_replace_the_selected_item_when_not_multi() {
         let mut state = not_resolved_default_state::<&str>(false);
 
         state.set_items(vec!["foo", "bar", "baz"]);
-
         state.select_item(0);
+
+        state.set_items(vec!["foo", "bar", "baz"]);
         state.select_item(1);
 
         assert_eq!(state.selected_items(), vec!["bar"]);
@@ -513,8 +647,9 @@ mod tests {
         let mut state = not_resolved_default_state::<&str>(true);
 
         state.set_items(vec!["foo", "bar", "baz"]);
-
         state.select_item(0);
+
+        state.set_items(vec!["foo", "bar", "baz"]);
         state.select_item(1);
 
         assert_eq!(state.selected_items(), vec!["foo", "bar"]);
@@ -525,8 +660,9 @@ mod tests {
         let mut state = not_resolved_default_state::<&str>(false);
 
         state.set_items(vec!["foo", "bar", "baz"]);
-
         state.select_item(0);
+
+        state.set_items(vec!["foo", "bar", "baz"]);
         state.select_item(0);
 
         assert_eq!(state.selected_items(), vec!["foo"]);
@@ -545,6 +681,7 @@ mod tests {
 
         let mut state = AutocompleteState::new(
             true,
+            true,
             onselect,
             DispatcherMock::never_called(),
             FnProp::from(|_s: String| -> ItemResolverResult<String> {
@@ -557,8 +694,13 @@ mod tests {
             "bar".to_string(),
             "baz".to_string(),
         ]);
-
         state.select_item(0);
+
+        state.set_items(vec![
+            "foo".to_string(),
+            "bar".to_string(),
+            "baz".to_string(),
+        ]);
         state.select_item(1);
 
         assert_eq!(

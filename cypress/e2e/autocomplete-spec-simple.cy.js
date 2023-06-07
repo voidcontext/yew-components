@@ -83,6 +83,24 @@
       cy.get('#single-select p').should('have.text', "Selected country: United Kingdom")
     })
 
+    it('should clean the input field after selection', () => {
+      cy.visit(`http://localhost:9001/${theme}/simple`)
+      cy.get('#single-select input[type=text]')
+        .type("united{downArrow}{downArrow}{enter}")
+
+      cy.get('#single-select p').should('have.text', "Selected country: United Kingdom")
+      cy.get('#single-select input').should('have.value', "")
+    })
+
+    it('should clean the items after selection', () => {
+      cy.visit(`http://localhost:9001/${theme}/simple`)
+      cy.get('#single-select input[type=text]')
+        .type("united{downArrow}{downArrow}{enter}")
+
+      cy.get('#single-select p').should('have.text', "Selected country: United Kingdom")
+      cy.get('#single-select .autocomplete-item').should('have.length', 0)
+    })
+
     it('should select clicked item', () => {
       cy.visit(`http://localhost:9001/${theme}/simple`)
       cy.get('#single-select input[type=text]')

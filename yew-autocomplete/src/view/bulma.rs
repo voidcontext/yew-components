@@ -13,7 +13,6 @@ pub struct Bulma<T: 'static + Clone + PartialEq> {
 
 pub enum Msg<T: 'static + Clone + PartialEq> {
     OnInput(String),
-    Search,
     ViewContextUpdated(super::Context<T>),
 }
 
@@ -46,27 +45,12 @@ impl<T: 'static + Clone + PartialEq + RenderHtml> Component for Bulma<T> {
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::ViewContextUpdated(ctx) => {
+                self.value = ctx.value.clone();
                 self.view_context = ctx;
                 true
             }
             Msg::OnInput(value) => {
-                self.value = value;
-
-                if self.view_context.auto {
-                    self.view_context
-                        .callbacks
-                        .on_input
-                        .emit(self.value.clone());
-                    false
-                } else {
-                    true
-                }
-            }
-            Msg::Search => {
-                self.view_context
-                    .callbacks
-                    .on_input
-                    .emit(self.value.clone());
+                self.view_context.callbacks.on_input.emit(value);
                 false
             }
         }
@@ -104,7 +88,7 @@ impl<T: 'static + Clone + PartialEq + RenderHtml> Component for Bulma<T> {
             .collect::<Html>();
 
         let oninput = make_callback(ctx.link(), Msg::OnInput);
-        let onsearch = ctx.link().callback(|_| Msg::Search);
+        let onclick = self.view_context.callbacks.resolve.clone();
 
         html! {
             <div>
@@ -131,7 +115,7 @@ impl<T: 'static + Clone + PartialEq + RenderHtml> Component for Bulma<T> {
                                 !self.view_context.auto,
                                 html! {
                                     <div class="control">
-                                        <input class="button is-primary" type="button" value="Search" onclick={onsearch}/>
+                                        <input class="button is-primary" type="button" value="Search" {onclick}/>
                                     </div>
                                 }
                             )

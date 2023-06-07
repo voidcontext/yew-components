@@ -4,7 +4,7 @@ mod render_html;
 
 use std::rc::Rc;
 
-use web_sys::KeyboardEvent;
+use web_sys::{KeyboardEvent, MouseEvent};
 use yew::Callback;
 
 pub use bulma::Bulma;
@@ -15,6 +15,7 @@ pub use render_html::RenderHtml;
 pub struct InputCallbacks {
     pub on_input: Callback<String>,
     pub on_keydown: Callback<KeyboardEvent>,
+    pub resolve: Callback<MouseEvent>, // TODO: make this more generic
     pub select_item: Callback<usize>,
 }
 
