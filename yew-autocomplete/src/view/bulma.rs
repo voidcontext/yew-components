@@ -126,6 +126,16 @@ impl<T: 'static + Clone + PartialEq + RenderHtml> Component for Bulma<T> {
                                 onkeydown={self.view_context.callbacks.on_keydown.clone()}
                             />
                         </div>
+                        {
+                            render_if(
+                                !self.view_context.auto,
+                                html! {
+                                    <div class="control">
+                                        <input class="button is-primary" type="button" value="Search" onclick={onsearch}/>
+                                    </div>
+                                }
+                            )
+                        }
                     </div>
                     {
                         render_if(!self.view_context.items.is_empty(), html!{
@@ -139,14 +149,6 @@ impl<T: 'static + Clone + PartialEq + RenderHtml> Component for Bulma<T> {
                         })
                     }
                 </div>
-                {
-                    render_if(
-                        !self.view_context.auto,
-                        html! {
-                            <input type="button" value="Search" onclick={onsearch}/>
-                        }
-                    )
-                }
             </div>
         }
     }
