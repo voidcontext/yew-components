@@ -2,6 +2,19 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## yew-autocomplete-v0.1.1 - 2023-06-07
+#### Bug Fixes
+- clippy warnings - (87f767b) - Gabor Pihaj
+- clean up state after selecting an item - (3fdf4bc) - Gabor Pihaj
+- search button in bulma view when auto is false - (881149a) - Gabor Pihaj
+#### Documentation
+- Add autocomplete README + add example in module documentation - (306c6e8) - Gabor Pihaj
+- update crate changelogs, since conventional commits weren't used from the beginning - (b2f720c) - Gabor Pihaj
+#### Miscellaneous Chores
+- bump yew-autocomplete version manually - (fad40b4) - Gabor Pihaj
+
+- - -
+
 ## yew-autocomplete-v0.1.0 - 2023-06-06
 
 Initial release, with the following functionality:
