@@ -56,7 +56,7 @@ where
 
         // TODO: make the min length configurable
         if self.input.len() > 2 && self.auto {
-            self.resolve()
+            self.resolve();
         } else {
             self.items = vec![];
         }
@@ -264,7 +264,7 @@ mod tests {
     }
 
     #[wasm_bindgen_test]
-    async fn test_oninput_should_not_resolve_autocomplete_items_when_auto_false() {
+    fn test_oninput_should_not_resolve_autocomplete_items_when_auto_false() {
         let mut state = AutocompleteState::new(
             false,
             false,
