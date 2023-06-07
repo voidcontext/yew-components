@@ -1,4 +1,4 @@
-# yew-components ![build status badge](https://woodpecker.ci.vdx.hu/api/badges/voidcontext/yew-components/status.svg)
+# yew-components [![build status badge](https://woodpecker.ci.vdx.hu/api/badges/voidcontext/yew-components/status.svg)](https://woodpecker.ci.vdx.hu/voidcontext/yew-components)
 
 A collection of high level components built with [yew.rs](https://yew.rs/)
 
