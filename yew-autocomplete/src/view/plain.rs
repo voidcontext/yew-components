@@ -1,126 +1,67 @@
+use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew::Html;
 
-use crate::make_callback;
+use crate::render_if;
 
+use super::render_items;
 use super::RenderHtml;
 
-pub struct Plain<T: 'static + Clone + PartialEq> {
-    value: String,
-    view_context: super::Context<T>,
-    _context_listener: ContextHandle<super::Context<T>>,
-}
+#[function_component(Plain)]
+pub fn plain<T: 'static + Clone + PartialEq + RenderHtml>() -> Html {
+    let view_ctx = use_context::<super::Context<T>>().expect("view::Context wasn't provided");
 
-pub enum Msg<T: 'static + Clone + PartialEq> {
-    OnInput(String),
-    ViewContextUpdated(super::Context<T>),
-}
+    let items = render_items(&view_ctx, &[], &[])
+        .into_iter()
+        .map(|item| {
+            html! { <li>{item}</li>}
+        })
+        .collect::<Html>();
+    let selected_lis = view_ctx
+        .selected_items
+        .iter()
+        .map(|value| {
+            html! { <li class={classes!("autocomplete-item", "selected")}>{value.render()}</li> }
+        })
+        .collect::<Html>();
 
-fn render_if(when: bool, html: Html) -> Html {
-    if when {
-        html
-    } else {
-        Html::default()
-    }
-}
+    let input_cb = view_ctx.callbacks.on_input.clone();
+    let oninput = move |e: InputEvent| {
+        let input = e.target_dyn_into::<HtmlInputElement>().unwrap();
+        input_cb.emit(input.value());
+    };
+    let onsearch = view_ctx.callbacks.resolve.clone();
 
-impl<T: 'static + Clone + PartialEq + RenderHtml> Component for Plain<T> {
-    type Message = Msg<T>;
-
-    type Properties = ();
-
-    fn create(ctx: &Context<Self>) -> Self {
-        let (view_context, context_listener) = ctx
-            .link()
-            .context(ctx.link().callback(Msg::ViewContextUpdated))
-            .expect("No View Context Provided");
-
-        Self {
-            value: view_context.value.clone(),
-            view_context,
-            _context_listener: context_listener,
-        }
-    }
-
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
-        match msg {
-            Msg::ViewContextUpdated(ctx) => {
-                self.value = ctx.value.clone();
-                self.view_context = ctx;
-                true
+    html! {
+        <div>
+            {
+                render_if(!view_ctx.selected_items.is_empty(), html!{
+                    <ul class="selected-items">
+                        { selected_lis }
+                    </ul>
+                })
             }
-            Msg::OnInput(value) => {
-                self.view_context.callbacks.on_input.emit(value);
-                false
+            <input
+                type="text"
+                value={view_ctx.value.clone()}
+                {oninput}
+                onkeydown={view_ctx.callbacks.on_keydown.clone()}
+            />
+            {
+                render_if(
+                    !view_ctx.auto,
+                    html! {
+                        <input type="button" value="Search" onclick={onsearch}/>
+                    }
+                )
             }
-        }
-    }
-
-    fn view(&self, ctx: &Context<Self>) -> Html {
-        let items_lis = self
-            .view_context
-            .items
-            .iter()
-            .enumerate()
-            .map(|(index, value)| {
-                let select_item = self.view_context.callbacks.select_item.clone();
-                let onclick = Callback::from(move |e: MouseEvent| {
-                    e.prevent_default();
-                    select_item.emit(index);
-                });
-
-                let mut classes = vec!["autocomplete-item"];
-
-                if self.view_context.highlighted.iter().any(|h| *h == index) {
-                    classes.push("highlighted");
-                }
-
-                html! { <li><a class={classes!(classes)} {onclick}>{value.render()}</a></li>}
-            })
-            .collect::<Html>();
-        let selected_lis = self
-            .view_context
-            .selected_items
-            .iter()
-            .map(|value| {
-                html! { <li class={classes!("autocomplete-item", "selected")}>{value.render()}</li> }
-            })
-            .collect::<Html>();
-
-        let oninput = make_callback(ctx.link(), Msg::OnInput);
-        let onsearch = self.view_context.callbacks.resolve.clone();
-
-        html! {
-            <div>
-                {
-                    render_if(!self.view_context.selected_items.is_empty(), html!{
-                        <ul class="selected-items">
-                            { selected_lis }
-                        </ul>
-                    })
-                }
-                <input
-                    type="text"
-                    value={self.value.clone()}
-                    {oninput}
-                    onkeydown={self.view_context.callbacks.on_keydown.clone()}
-                />
-                {
-                    render_if(
-                        !self.view_context.auto,
-                        html! {
-                            <input type="button" value="Search" onclick={onsearch}/>
-                        }
-                    )
-                }
-                {
-                    render_if(!self.view_context.items.is_empty(), html!{
-                        <ul class="autocomplete-items">
-                            { items_lis }
-                        </ul>
-                    })
-                }
-            </div>
-        }
+            {
+                render_if(!view_ctx.items.is_empty(), html!{
+                    <ul class="autocomplete-items">
+                        { items }
+                    </ul>
+                })
+            }
+        </div>
     }
 }
