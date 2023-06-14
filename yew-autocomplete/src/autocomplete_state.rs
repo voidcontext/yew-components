@@ -1,15 +1,16 @@
 use std::{cell::RefCell, rc::Rc};
 
+use wasm_bindgen_futures::spawn_local;
 use yew::Callback;
 
-use crate::{AsyncCallback, ItemResolver, Msg};
+use crate::ItemResolver;
 
 pub enum HighlightDirection {
     Previous,
     Next,
 }
 
-pub(crate) struct AutocompleteState<T, D: AsyncCallback<Msg>> {
+pub(crate) struct AutocompleteState<T> {
     // State
     input: String,
     items: Rc<RefCell<Vec<T>>>,
@@ -17,14 +18,14 @@ pub(crate) struct AutocompleteState<T, D: AsyncCallback<Msg>> {
     selected_items: Vec<T>,
     onselect: Callback<Vec<T>>,
 
-    dispatcher: D,
+    onresolve: Callback<bool>,
     item_resolver: ItemResolver<T>,
 
     auto: bool,
     multi_select: bool,
 }
 
-impl<T, D: AsyncCallback<Msg>> AutocompleteState<T, D>
+impl<T> AutocompleteState<T>
 where
     T: 'static + Clone + PartialEq,
 {
@@ -32,7 +33,7 @@ where
         auto: bool,
         multi_select: bool,
         onselect: Callback<Vec<T>>,
-        dispatcher: D,
+        onresolve: Callback<bool>,
         item_resolver: ItemResolver<T>,
     ) -> Self {
         Self {
@@ -40,7 +41,7 @@ where
             items: Rc::new(RefCell::new(Vec::new())),
             highlighted_item: Rc::new(RefCell::new(None)),
             selected_items: Vec::default(),
-            dispatcher,
+            onresolve,
             item_resolver,
             onselect,
             auto,
@@ -67,25 +68,28 @@ where
         }
     }
 
-    // TODO: refactor
-    //       just require a callback, then spawn a local thread internally to evaluate the future and call the callback
-    // by using the dispatcher's ability to run evaluate futures:
-    // - resolves the items
-    // - stores the item in the state
     pub fn resolve(&self) {
         let string = self.input.clone();
         let item_resolver = self.item_resolver.clone();
 
         let rc_items = Rc::clone(&self.items);
         let rc_highlighted = Rc::clone(&self.highlighted_item);
-        self.dispatcher.dispatch(Box::pin(async move {
+
+        let onresolve = self.onresolve.clone();
+
+        spawn_local(async move {
+            // resolve items by providing the input string
             let items = (item_resolver.fun)(string).await.unwrap();
 
+            // store newly resolved items in the state (self)
             *rc_items.borrow_mut() = items;
+
+            // Reset the highlighted item: the list have changed, it doesn't make sense to keep the old index
             *rc_highlighted.borrow_mut() = None;
 
-            Msg::Noop(true)
-        }));
+            // Notify the UI component that the items have been resolved
+            onresolve.emit(true);
+        });
     }
 
     // ### Items
@@ -150,88 +154,36 @@ where
 #[cfg(test)]
 mod tests {
     use core::panic;
-    use std::{
-        marker::PhantomData,
-        pin::Pin,
-        sync::{Arc, Mutex},
-    };
+    use std::sync::{Arc, Mutex};
 
-    use crate::{AsyncCallback, ItemResolverResult, Msg};
+    use crate::ItemResolverResult;
 
     use super::{AutocompleteState, HighlightDirection};
 
-    use futures::{channel::mpsc::Receiver, Future, StreamExt};
+    use futures::StreamExt;
     use wasm_bindgen::prelude::*;
-    use wasm_bindgen_futures::{spawn_local, JsFuture};
+    use wasm_bindgen_futures::JsFuture;
     use wasm_bindgen_test::wasm_bindgen_test;
 
     use yew::Callback;
     use yew_commons::FnProp;
 
-    type PinnedFuture<T> = Pin<Box<dyn Future<Output = T>>>;
-
-    struct DispatcherMock<T> {
-        f: Box<dyn Fn(PinnedFuture<T>)>,
-        _t: PhantomData<T>,
-    }
-
-    impl<T: 'static + std::fmt::Debug> DispatcherMock<T> {
-        fn noop() -> Self {
-            Self {
-                f: Box::new(move |f| {
-                    spawn_local(async move {
-                        f.await;
-                    });
-                }),
-                _t: PhantomData,
-            }
-        }
-
-        fn forward() -> (Self, Receiver<T>) {
-            let (tx, rx) = futures::channel::mpsc::channel::<T>(10);
-
-            let state = Self {
-                f: Box::new(move |f| {
-                    let mut tx = tx.clone();
-                    spawn_local(async move {
-                        let msg = f.await;
-                        tx.try_send(msg).unwrap();
-                    });
-                }),
-                _t: PhantomData,
-            };
-
-            (state, rx)
-        }
-
-        fn never_called() -> Self {
-            Self {
-                f: Box::new(|_f| {
-                    panic!("shouldn't be called");
-                }),
-                _t: PhantomData,
-            }
-        }
-    }
-
     fn noop_callback<T>() -> Callback<T> {
         Callback::from(|_| ())
     }
 
-    impl<T> AsyncCallback<T> for DispatcherMock<T> {
-        fn dispatch(&self, future: Pin<Box<dyn futures::Future<Output = T>>>) {
-            (self.f)(future);
-        }
+    fn never_called_callback<T>() -> Callback<T> {
+        Callback::from(|_| panic!("shouldn't have been called"))
     }
 
     fn not_resolved_default_state<T: std::fmt::Debug + Clone + PartialEq + 'static>(
         multi: bool,
-    ) -> AutocompleteState<T, DispatcherMock<Msg>> {
+    ) -> AutocompleteState<T> {
         AutocompleteState::new(
             true,
             multi,
             noop_callback(),
-            DispatcherMock::never_called(),
+            never_called_callback(),
             FnProp::from(|_s: String| -> ItemResolverResult<T> {
                 panic!("Shouldn't be called");
             }),
@@ -241,12 +193,12 @@ mod tests {
     fn default_state_with_static_results<T: std::fmt::Debug + Clone + PartialEq + 'static>(
         multi: bool,
         results: Vec<T>,
-    ) -> AutocompleteState<T, DispatcherMock<Msg>> {
+    ) -> AutocompleteState<T> {
         AutocompleteState::new(
             true,
             multi,
             noop_callback(),
-            DispatcherMock::noop(),
+            noop_callback(),
             FnProp::from(move |_s: String| -> ItemResolverResult<T> {
                 let results = results.clone();
                 Box::pin(async { Ok(results) })
@@ -274,19 +226,17 @@ mod tests {
 
     #[wasm_bindgen_test]
     async fn test_oninput_should_resolve_autocomplete_items() {
-        let (dispatcher, rx) = DispatcherMock::forward();
-
-        let (resolver_tx, resolver_rx) = futures::channel::mpsc::channel::<String>(10);
+        let (tx, rx) = futures::channel::mpsc::channel::<String>(10);
 
         let mut state = AutocompleteState::new(
             true,
             false,
             noop_callback(),
-            dispatcher,
+            noop_callback(),
             FnProp::from(move |s: String| -> ItemResolverResult<String> {
-                let mut resolver_tx = resolver_tx.clone();
+                let mut tx = tx.clone();
                 Box::pin(async move {
-                    resolver_tx.try_send(s).unwrap();
+                    tx.try_send(s).unwrap();
                     Ok(vec!["result".to_string()])
                 })
             }),
@@ -295,13 +245,36 @@ mod tests {
         state.oninput("this is a text");
         tick().await;
 
-        // dispatcher has been called
+        // items have been resolved
         let (sent, _) = rx.into_future().await;
-        assert_eq!(sent.unwrap(), Msg::Noop(true));
+        assert_eq!(sent.unwrap(), "this is a text".to_string());
+    }
+
+    #[wasm_bindgen_test]
+    async fn test_oninput_should_call_onresolve_callback() {
+        let (tx, rx) = futures::channel::mpsc::channel::<String>(10);
+
+        let onresolve = Callback::from(move |_| {
+            let mut tx = tx.clone();
+            tx.try_send("onresolve called".to_string()).unwrap();
+        });
+
+        let mut state = AutocompleteState::new(
+            true,
+            false,
+            noop_callback(),
+            onresolve,
+            FnProp::from(move |_: String| -> ItemResolverResult<String> {
+                Box::pin(async move { Ok(vec!["result".to_string()]) })
+            }),
+        );
+
+        state.oninput("this is a text");
+        tick().await;
 
         // items have been resolved
-        let (sent, _) = resolver_rx.into_future().await;
-        assert_eq!(sent.unwrap(), "this is a text".to_string());
+        let (sent, _) = rx.into_future().await;
+        assert_eq!(sent.unwrap(), "onresolve called".to_string());
     }
 
     #[wasm_bindgen_test]
@@ -310,7 +283,7 @@ mod tests {
             false,
             false,
             noop_callback(),
-            DispatcherMock::never_called(),
+            never_called_callback(),
             FnProp::from(|_s: String| -> ItemResolverResult<String> {
                 panic!("Shouldn't be called")
             }),
@@ -368,16 +341,14 @@ mod tests {
     // --- resolve
 
     #[wasm_bindgen_test]
-    async fn test_resolve_should_resolve_autocomplete_items() {
-        let (dispatcher, mut rx) = DispatcherMock::forward();
-
-        let (resolver_tx, mut resolver_rx) = futures::channel::mpsc::channel::<String>(10);
+    async fn test_resolve_should_resolve_autocomplete_items_when_auto_is_false() {
+        let (resolver_tx, resolver_rx) = futures::channel::mpsc::channel::<String>(10);
 
         let mut state = AutocompleteState::new(
             false,
             false,
             noop_callback(),
-            dispatcher,
+            noop_callback(),
             FnProp::from(move |s: String| -> ItemResolverResult<String> {
                 let mut resolver_tx = resolver_tx.clone();
                 Box::pin(async move {
@@ -390,19 +361,8 @@ mod tests {
         state.oninput("this is a text");
         tick().await;
 
-        // ensure oninput didn't resolve the items, TODO: this should be a separate test?
-        let sent = rx.next().await;
-        assert!(sent.is_none());
-
-        let sent = resolver_rx.next().await;
-        assert!(sent.is_none());
-
         state.resolve();
         tick().await;
-
-        // dispatcher has been called
-        let (sent, _) = rx.into_future().await;
-        assert_eq!(sent.unwrap(), Msg::Noop(true));
 
         // items have been resolved
         let (sent, _) = resolver_rx.into_future().await;
@@ -592,7 +552,7 @@ mod tests {
             true,
             true,
             onselect,
-            DispatcherMock::noop(),
+            noop_callback(),
             FnProp::from(|_s: String| -> ItemResolverResult<String> {
                 Box::pin(async {
                     Ok(vec![
@@ -642,7 +602,7 @@ mod tests {
             true,
             false,
             noop_callback(),
-            DispatcherMock::noop(),
+            noop_callback(),
             FnProp::from(|_s: String| -> ItemResolverResult<&'static str> {
                 Box::pin(async { Ok(vec!["foo", "foobar"]) })
             }),
@@ -662,7 +622,7 @@ mod tests {
             true,
             false,
             noop_callback(),
-            DispatcherMock::noop(),
+            noop_callback(),
             FnProp::from(|_s: String| -> ItemResolverResult<&'static str> {
                 Box::pin(async { Ok(vec!["foo", "foobar"]) })
             }),
@@ -683,7 +643,7 @@ mod tests {
             true,
             false,
             noop_callback(),
-            DispatcherMock::noop(),
+            noop_callback(),
             FnProp::from(|_s: String| -> ItemResolverResult<&'static str> {
                 Box::pin(async { Ok(vec!["foo", "foobar"]) })
             }),
@@ -756,7 +716,7 @@ mod tests {
             true,
             true,
             onselect,
-            DispatcherMock::noop(),
+            noop_callback(),
             FnProp::from(|_s: String| -> ItemResolverResult<String> {
                 Box::pin(async {
                     Ok(vec![

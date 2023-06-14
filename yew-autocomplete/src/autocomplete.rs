@@ -1,6 +1,6 @@
 use std::{future::Future, pin::Pin, rc::Rc};
 
-use yew::{html::Scope, prelude::*};
+use yew::prelude::*;
 use yew_commons::fn_prop::FnProp;
 
 use crate::{
@@ -17,7 +17,7 @@ pub type ItemResolver<T> = FnProp<String, ItemResolverResult<T>>;
 
 /// A Yew.rs [Component] with highly configurable auto completion capabilites
 pub struct Autocomplete<T: Clone + PartialEq + RenderHtml + 'static> {
-    state: AutocompleteState<T, AsyncMessageCallback<Self>>,
+    state: AutocompleteState<T>,
 }
 
 /// Properties of the [Autocomplete] component
@@ -42,33 +42,7 @@ pub enum Msg {
     OnKeydown(u32),
     SelectItem(usize),
     Resolve,
-    Reload,
     Noop(bool),
-}
-
-/// An synchronously executed async callback
-pub(crate) trait AsyncCallback<T> {
-    /// Synchronously dispatches  the given future
-    fn dispatch(&self, future: Pin<Box<dyn Future<Output = T>>>);
-}
-
-/// An async callback that is capable of sending an async message (a [`Component::Message`] wrapped in a Future) to
-/// a component
-struct AsyncMessageCallback<C: Component> {
-    link: Scope<C>,
-}
-
-impl<C: Component> AsyncMessageCallback<C> {
-    /// Creates a new [`AsyncMessageCallback`] from the [Scope] of a [Component]
-    fn new(link: Scope<C>) -> Self {
-        Self { link }
-    }
-}
-
-impl<C: Component> AsyncCallback<C::Message> for AsyncMessageCallback<C> {
-    fn dispatch(&self, future: Pin<Box<dyn Future<Output = C::Message>>>) {
-        self.link.send_future(future);
-    }
 }
 
 impl<T> Component for Autocomplete<T>
@@ -85,7 +59,7 @@ where
                 ctx.props().auto,
                 ctx.props().multi_select,
                 ctx.props().onchange.clone(),
-                AsyncMessageCallback::new(ctx.link().clone()),
+                ctx.link().callback(Msg::Noop),
                 ctx.props().resolve_items.clone(),
             ),
         }
@@ -122,7 +96,6 @@ where
                 self.state.resolve();
                 false
             }
-            Msg::Reload => true,
             Msg::Noop(reload) => reload,
         }
     }
