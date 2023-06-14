@@ -37,14 +37,13 @@ pub struct Props<T: PartialEq> {
 
 /// Internal messages of the [Autocomplete] component
 #[derive(Debug, PartialEq)]
-pub enum Msg<T> {
+pub enum Msg {
     OnInput(String),
     OnKeydown(u32),
-    SetItems(Vec<T>),
     SelectItem(usize),
     Resolve,
     Reload,
-    Noop,
+    Noop(bool),
 }
 
 /// An synchronously executed async callback
@@ -76,7 +75,7 @@ impl<T> Component for Autocomplete<T>
 where
     T: 'static + PartialEq + Clone + RenderHtml,
 {
-    type Message = Msg<T>;
+    type Message = Msg;
 
     type Properties = Props<T>;
 
@@ -115,10 +114,6 @@ where
                     _ => false, // Noop
                 }
             }
-            Msg::SetItems(items) => {
-                self.state.set_items(items);
-                true
-            }
             Msg::SelectItem(index) => {
                 self.state.select_item(index);
                 true
@@ -128,7 +123,7 @@ where
                 false
             }
             Msg::Reload => true,
-            Msg::Noop => false,
+            Msg::Noop(reload) => reload,
         }
     }
 

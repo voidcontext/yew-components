@@ -904,6 +904,7 @@ version = "0.1.1"
 dependencies = [
  "futures",
  "gloo-utils",
+ "js-sys",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "wasm-bindgen-test",
