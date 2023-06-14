@@ -1,7 +1,6 @@
 use std::{future::Future, pin::Pin, rc::Rc};
 
 use yew::prelude::*;
-use yew_commons::fn_prop::FnProp;
 
 use crate::{
     autocomplete_state::{AutocompleteState, HighlightDirection},
@@ -13,7 +12,7 @@ pub type ItemResolverResult<T> = Pin<Box<dyn Future<Output = Result<Vec<T>, ()>>
 
 /// An async function that can be passed as a Prop, that takes the current value of the
 /// [`Autocomplete`] input and returns a Vec of Ts
-pub type ItemResolver<T> = FnProp<String, ItemResolverResult<T>>;
+pub type ItemResolver<T> = Callback<String, ItemResolverResult<T>>;
 
 /// A Yew.rs [Component] with highly configurable auto completion capabilites
 pub struct Autocomplete<T: Clone + PartialEq + RenderHtml + 'static> {

@@ -79,7 +79,7 @@ where
 
         spawn_local(async move {
             // resolve items by providing the input string
-            let items = (item_resolver.fun)(string).await.unwrap();
+            let items = item_resolver.emit(string).await.unwrap();
 
             // store newly resolved items in the state (self)
             *rc_items.borrow_mut() = items;
@@ -166,7 +166,6 @@ mod tests {
     use wasm_bindgen_test::wasm_bindgen_test;
 
     use yew::Callback;
-    use yew_commons::FnProp;
 
     fn noop_callback<T>() -> Callback<T> {
         Callback::from(|_| ())
@@ -184,7 +183,7 @@ mod tests {
             multi,
             noop_callback(),
             never_called_callback(),
-            FnProp::from(|_s: String| -> ItemResolverResult<T> {
+            Callback::from(|_s: String| -> ItemResolverResult<T> {
                 panic!("Shouldn't be called");
             }),
         )
@@ -199,7 +198,7 @@ mod tests {
             multi,
             noop_callback(),
             noop_callback(),
-            FnProp::from(move |_s: String| -> ItemResolverResult<T> {
+            Callback::from(move |_s: String| -> ItemResolverResult<T> {
                 let results = results.clone();
                 Box::pin(async { Ok(results) })
             }),
@@ -233,7 +232,7 @@ mod tests {
             false,
             noop_callback(),
             noop_callback(),
-            FnProp::from(move |s: String| -> ItemResolverResult<String> {
+            Callback::from(move |s: String| -> ItemResolverResult<String> {
                 let mut tx = tx.clone();
                 Box::pin(async move {
                     tx.try_send(s).unwrap();
@@ -264,7 +263,7 @@ mod tests {
             false,
             noop_callback(),
             onresolve,
-            FnProp::from(move |_: String| -> ItemResolverResult<String> {
+            Callback::from(move |_: String| -> ItemResolverResult<String> {
                 Box::pin(async move { Ok(vec!["result".to_string()]) })
             }),
         );
@@ -284,7 +283,7 @@ mod tests {
             false,
             noop_callback(),
             never_called_callback(),
-            FnProp::from(|_s: String| -> ItemResolverResult<String> {
+            Callback::from(|_s: String| -> ItemResolverResult<String> {
                 panic!("Shouldn't be called")
             }),
         );
@@ -349,7 +348,7 @@ mod tests {
             false,
             noop_callback(),
             noop_callback(),
-            FnProp::from(move |s: String| -> ItemResolverResult<String> {
+            Callback::from(move |s: String| -> ItemResolverResult<String> {
                 let mut resolver_tx = resolver_tx.clone();
                 Box::pin(async move {
                     resolver_tx.try_send(s).unwrap();
@@ -553,7 +552,7 @@ mod tests {
             true,
             onselect,
             noop_callback(),
-            FnProp::from(|_s: String| -> ItemResolverResult<String> {
+            Callback::from(|_s: String| -> ItemResolverResult<String> {
                 Box::pin(async {
                     Ok(vec![
                         "foo".to_string(),
@@ -603,7 +602,7 @@ mod tests {
             false,
             noop_callback(),
             noop_callback(),
-            FnProp::from(|_s: String| -> ItemResolverResult<&'static str> {
+            Callback::from(|_s: String| -> ItemResolverResult<&'static str> {
                 Box::pin(async { Ok(vec!["foo", "foobar"]) })
             }),
         );
@@ -623,7 +622,7 @@ mod tests {
             false,
             noop_callback(),
             noop_callback(),
-            FnProp::from(|_s: String| -> ItemResolverResult<&'static str> {
+            Callback::from(|_s: String| -> ItemResolverResult<&'static str> {
                 Box::pin(async { Ok(vec!["foo", "foobar"]) })
             }),
         );
@@ -644,7 +643,7 @@ mod tests {
             false,
             noop_callback(),
             noop_callback(),
-            FnProp::from(|_s: String| -> ItemResolverResult<&'static str> {
+            Callback::from(|_s: String| -> ItemResolverResult<&'static str> {
                 Box::pin(async { Ok(vec!["foo", "foobar"]) })
             }),
         );
@@ -717,7 +716,7 @@ mod tests {
             true,
             onselect,
             noop_callback(),
-            FnProp::from(|_s: String| -> ItemResolverResult<String> {
+            Callback::from(|_s: String| -> ItemResolverResult<String> {
                 Box::pin(async {
                     Ok(vec![
                         "foo".to_string(),
