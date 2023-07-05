@@ -3,7 +3,10 @@ ignore_merge_commits = false
 branch_whitelist = []
 pre_bump_hooks = []
 post_bump_hooks = []
-pre_package_bump_hooks = []
+pre_package_bump_hooks = [
+  "cargo set-version {{version}} --package {{package}}",
+  "cargo build"
+]
 post_package_bump_hooks = []
 tag_prefix = "v"
 

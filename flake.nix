@@ -193,6 +193,7 @@
               ++ [
                 pkgs.node2nix
                 pkgs.gnused
+                pkgs.cargo-edit
                 gen-node-packages
                 watch-autocomplete-demo
                 cypress
