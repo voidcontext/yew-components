@@ -2,6 +2,17 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## yew-autocomplete-v0.2.0 - 2023-07-05
+#### Bug Fixes
+- don't require exact version of wasm-bindgen - (e97b643) - Gabor Pihaj
+#### Refactoring
+- replace FnProp with Callback - (2258075) - Gabor Pihaj
+- Move more responsibilty into the state: replace dispatcher with a simple Callback - (5d6d4b1) - Gabor Pihaj
+- Move more responsibilty into the state: storing items after resolving - (75bddd7) - Gabor Pihaj
+- Refactor views into function components - (0c53f49) - Gabor Pihaj
+
+- - -
+
 ## yew-autocomplete-v0.1.1 - 2023-06-07
 #### Bug Fixes
 - clippy warnings - (87f767b) - Gabor Pihaj
