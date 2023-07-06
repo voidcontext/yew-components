@@ -2,6 +2,14 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## yew-commons-v0.1.1 - 2023-07-06
+#### Bug Fixes
+- don't require exact version of wasm-bindgen - (e97b643) - Gabor Pihaj
+#### Documentation
+- update crate changelogs, since conventional commits weren't used from the beginning - (b2f720c) - Gabor Pihaj
+
+- - -
+
 ## yew-commons-v0.1.0 - 2023-06-01
 
 Initial release, exposing `FnProp`

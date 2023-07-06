@@ -1,6 +1,6 @@
 [package]
 name = "yew-commons"
-version = "0.1.0"
+version = "0.1.1"
 description = "Common code for developing yew components"
 authors = ["Gabor Pihaj <me@gaborpihaj.com>"]
 keywords = ["yew", "wasm", "WebAssembly"]
