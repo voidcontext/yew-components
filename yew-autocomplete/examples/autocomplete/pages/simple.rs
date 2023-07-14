@@ -8,7 +8,7 @@ use crate::{PageProps, View, COUNTRIES};
 
 #[function_component(Simple)]
 pub fn simple(props: &PageProps) -> Html {
-    let countries = use_state(|| Vec::new());
+    let countries = use_state(Vec::new);
 
     let resolve_items: ItemResolver<String> =
         Callback::from(|input: String| -> ItemResolverResult<String> {
@@ -22,7 +22,7 @@ pub fn simple(props: &PageProps) -> Html {
 
     let onchange_single = {
         let countries = countries.clone();
-        Callback::from(move |selected: Vec<String>| countries.set(selected.clone()))
+        Callback::from(move |selected: Vec<String>| countries.set(selected))
     };
 
     let view = match props.view {

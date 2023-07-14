@@ -1,18 +1,34 @@
 {
   description = "A libary that contains various utils for developing web apps with yew-rs";
 
+  inputs.nixpkgs.url = "nixpkgs/release-23.05";
+  inputs.nix-rust-utils.url = "git+https://git.vdx.hu/voidcontext/nix-rust-utils.git?ref=refs/tags/v0.8.0";
+  inputs.nix-rust-utils.inputs.nixpkgs.follows = "nixpkgs";
   inputs.flake-utils.url = "github:numtide/flake-utils";
-  inputs.nru.url = "github:voidcontext/nix-rust-utils/v0.4.1";
+  inputs.rust-overlay.url = "github:oxalica/rust-overlay";
 
   outputs = {
+    nixpkgs,
     flake-utils,
-    nru,
+    nix-rust-utils,
+    rust-overlay,
     ...
   }:
     flake-utils.lib.eachDefaultSystem (
       system: let
-        lib = nru.lib.${system};
-        pkgs = nru.env.${system}.pkgs;
+        pkgs = import nixpkgs {
+          inherit system;
+          overlays = [rust-overlay.overlays.default];
+        };
+        rustWithWasm32 = pkgs.rust-bin.stable."1.69.0".default.override {
+          targets = ["wasm32-unknown-unknown"];
+        };
+
+        nru = nix-rust-utils.mkLib {
+          inherit pkgs;
+          toolchain = rustWithWasm32;
+        };
+        src = ./.;
 
         index-html = import ./index.html.nix {inherit pkgs;};
 
@@ -28,34 +44,30 @@
           }
         '';
 
-        yew-components = lib.mkWasmCrate {
-          pname = "yew-components-all";
-          version = "0.1.0";
-          src = ./.;
+        yew-components = nru.mkWasmCrate {
+          inherit src;
           # Nodejs is need by wasm-bindgen-test
-          packageAttrs.checkInputs = [pkgs.nodejs];
+          checkInputs = [pkgs.nodejs];
         };
 
         example = name:
         # TODO: find a better way to build examples
-          lib.mkWasmCrate {
-            pname = "yew-components-${name}-demo";
-            version = "0.1.0";
-            src = ./.;
-            packageAttrs.checkInputs = [pkgs.nodejs];
+          nru.mkWasmCrate {
+            inherit src;
+            checkInputs = [pkgs.nodejs];
             # Build examples in the preBuild step and copy them into the release directory so that
             # the postBuild script picks them up and generates their JS bindings
-            packageAttrs.preBuild = lib.snippets.wasm.buildExample name;
+            preBuild = nru.snippets.wasm.buildExample name;
           };
 
         serve-example-demo = name: port: let
           demo-src = pkgs.symlinkJoin {
             name = "${name}-demo";
-            paths = [(index-html name plainViewCss) (example name).package];
+            paths = [(index-html name plainViewCss) (example name)];
           };
         in
           pkgs.writeShellScriptBin "serve-${name}-demo"
-          (lib.snippets.utils.serve demo-src port);
+          (nru.snippets.utils.serve demo-src port);
 
         serve-autocomplete-demo = serve-example-demo "autocomplete" 9001;
 
@@ -108,21 +120,21 @@
           ));
 
         watch-autocomplete-demo = let
-          watches = lib.utils.watch {
+          watches = nru.utils.watch {
             "$WORKSPACE/yew-autocomplete/src $WORKSPACE/yew-autocomplete/examples/autocomplete" = ''
-              ${lib.snippets.wasm.buildExample "autocomplete"}
-              ${lib.snippets.wasm.bindgen {outDir = "$WORKSPACE/dist/lib";}}
+              ${nru.snippets.wasm.buildExample "autocomplete"}
+              ${nru.snippets.wasm.bindgen {outDir = "$WORKSPACE/dist/nru";}}
             '';
           };
         in
           pkgs.writeShellScriptBin "watch-autocomplete-demo"
-          (lib.snippets.utils.cleanupWrapper ''
+          (nru.snippets.utils.cleanupWrapper ''
             out=$WORKSPACE/dist
 
-            mkdir -p $out/lib
+            mkdir -p $out/nru
             cp ${index-html "autocomplete" plainViewCss}/index.html $out
             ${watches}
-            ${lib.snippets.utils.serve "$out" 9001}
+            ${nru.snippets.utils.serve "$out" 9001}
           '');
 
         mkRunE2eTests = suffix: wrapper: let
@@ -159,15 +171,27 @@
             '';
           };
 
-        run-e2e-tests = mkRunE2eTests "" lib.snippets.utils.cleanupWrapper;
+        run-e2e-tests = mkRunE2eTests "" nru.snippets.utils.cleanupWrapper;
         run-e2e-tests-ci = mkRunE2eTests "-ci" (text: text);
 
         mkApp = derivation: name: {
-          apps.${name} = {
+          ${name} = {
             type = "app";
             program = "${derivation}/bin/${name}";
           };
         };
+
+        checks =
+          (nru.mkWasmChecks {
+            inherit src;
+            crate = yew-components;
+          })
+          // {
+            run-e2e-tests = run-e2e-tests;
+            run-e2e-tests-ci = run-e2e-tests-ci;
+            serve-autocomplete-demo = serve-autocomplete-demo;
+            nix-formatting = check-nix-formatting;
+          };
 
         apps = let
           derivations = [
@@ -177,29 +201,24 @@
           ];
         in
           builtins.foldl' pkgs.lib.recursiveUpdate {} derivations;
-      in (apps
-        // {
-          packages.default = yew-components.package;
+      in {
+        inherit apps checks;
+        packages.default = yew-components;
 
-          checks.default = yew-components.package;
-          checks.run-e2e-tests = run-e2e-tests;
-          checks.run-e2e-tests-ci = run-e2e-tests-ci;
-          checks.serve-autocomplete-demo = serve-autocomplete-demo;
-          checks.nix-formatting = check-nix-formatting;
-
-          devShells.default = (lib.mkDevShell yew-components).overrideAttrs (old: {
-            buildInputs =
-              old.buildInputs
-              ++ [
-                pkgs.node2nix
-                pkgs.gnused
-                pkgs.cargo-edit
-                gen-node-packages
-                watch-autocomplete-demo
-                cypress
-                fmt
-              ];
-          });
-        })
+        devShells.default = nru.mkDevShell {
+          crate = yew-components;
+          inherit checks;
+          buildInputs = [
+            pkgs.node2nix
+            pkgs.gnused
+            pkgs.cargo-edit
+            gen-node-packages
+            watch-autocomplete-demo
+            cypress
+            fmt
+            rustWithWasm32
+          ];
+        };
+      }
     );
 }

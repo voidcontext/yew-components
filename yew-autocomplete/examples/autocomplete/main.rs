@@ -104,7 +104,7 @@ fn tabs(props: &TabsProps) -> Html {
                 html! {
                     <li class={classes!(classes)}>
                         <a href={format!("/{}/{}", view, example.to_lowercase()) }>
-                            {example.clone()}
+                            {example}
                             <span class={classes!(tag_classes)} style="margin-left: 0.5rem">{format!("view: {}", view)}</span>
                         </a>
                     </li>

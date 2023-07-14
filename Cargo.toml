@@ -4,3 +4,6 @@ members = [
   "yew-autocomplete"
 ]
 
+[workspace.package]
+name = "yew-components"
+version = "0.1.0"
