@@ -1,0 +1,31 @@
+when:
+  - event: push
+    branch: main
+  - event: pull_request
+
+steps:
+  check:
+    image: git.vdx.hu/voidcontext/woodpecker-plugin-nix-attic:0.1.1
+    settings:
+      binary_cache: https://cache.nix.vdx.hu/private
+      binary_cache_public_key: private:O0/Z0BQZpKKHQQES65u7xNfZF7eCZoz9RKJi191TGaM=
+      binary_cache_token:
+        from_secret: attic_token
+      script: |
+        nix flake check
+
+        attic login attic $PLUGIN_BINARY_CACHE $PLUGIN_BINARY_CACHE_TOKEN
+        attic push private $(nix-store --query --requisites --include-outputs $(nix path-info --derivation .#default))
+        attic push private $(nix path-info .#run-e2e-tests)
+        attic push private $(nix path-info .#run-e2e-tests-ci)
+        attic push private $(nix path-info .#erve-autocomplete-demo)
+        attic push private $(nix path-info .#check-nix-formatting)
+  e2e:
+    image: git.vdx.hu/voidcontext/woodpecker-plugin-nix-attic:0.1.1
+    settings:
+      binary_cache: https://cache.nix.vdx.hu/private
+      binary_cache_public_key: private:O0/Z0BQZpKKHQQES65u7xNfZF7eCZoz9RKJi191TGaM=
+      binary_cache_token:
+        from_secret: attic_token
+      script: |
+        nix run .#run-e2e-tests-ci

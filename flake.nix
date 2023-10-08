@@ -187,9 +187,11 @@
             crate = yew-components;
           })
           // {
-            run-e2e-tests = run-e2e-tests;
-            run-e2e-tests-ci = run-e2e-tests-ci;
-            serve-autocomplete-demo = serve-autocomplete-demo;
+            inherit
+              run-e2e-tests
+              run-e2e-tests-ci
+              serve-autocomplete-demo
+              ;
             nix-formatting = check-nix-formatting;
           };
 
@@ -203,7 +205,15 @@
           builtins.foldl' pkgs.lib.recursiveUpdate {} derivations;
       in {
         inherit apps checks;
-        packages.default = yew-components;
+        packages = {
+          default = yew-components;
+          inherit
+            run-e2e-tests
+            run-e2e-tests-ci
+            serve-autocomplete-demo
+            check-nix-formatting
+            ;
+        };
 
         devShells.default = nru.mkDevShell {
           crate = yew-components;

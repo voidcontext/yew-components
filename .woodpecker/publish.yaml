@@ -1,0 +1,16 @@
+when:
+  - event: tag
+
+pipeline:
+  publish:
+    image: git.vdx.hu/voidcontext/woodpecker-plugin-nix-attic:0.1.1
+    settings:
+      binary_cache: https://cache.nix.vdx.hu/private
+      binary_cache_public_key: private:O0/Z0BQZpKKHQQES65u7xNfZF7eCZoz9RKJi191TGaM=
+      binary_cache_token:
+        from_secret: attic_token
+      cargo_api_token:
+        from_secret: cargo_api_token
+      script: |
+        export PACKAGE=$(echo $CI_COMMIT_TAG | nix develop --command sed 's/-v[0-9]\+\.[0-9]\+\.[0-9]\+.*$//')
+        nix develop --command cargo publish -p $PACKAGE --token $PLUGIN_CARGO_API_TOKEN
