@@ -2,6 +2,15 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## yew-autocomplete-v0.3.0 - 2023-11-25
+#### Build system
+- upgrade nix-rust-utils to v0.8.0 (#3) - (c391428) - Gabor Pihaj
+#### Miscellaneous Chores
+- **(version)** yew-commons-v0.1.1 - (127c3bb) - Gabor Pihaj
+- upgrade: yew to 0.21, nix-rust-utils to v0.10.0 (#5) - (324351f) - Gabor Pihaj
+
+- - -
+
 ## yew-autocomplete-v0.2.0 - 2023-07-05
 #### Bug Fixes
 - don't require exact version of wasm-bindgen - (e97b643) - Gabor Pihaj
