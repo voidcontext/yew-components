@@ -14,7 +14,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 wasm-bindgen = { version = "0.2.*", features = ["serde-serialize"] }
-yew = "0.20"
+yew = "0.21"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"

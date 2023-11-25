@@ -1,3 +1,7 @@
+#![allow(clippy::missing_errors_doc)]
+#![allow(clippy::missing_panics_doc)]
+#![allow(clippy::let_underscore_untyped)]
+
 use std::{fmt::Display, str::FromStr};
 
 use gloo_utils::document;
@@ -7,7 +11,7 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 
 pub use data::countries::COUNTRIES;
-use pages::*;
+use pages::{multi, non_auto, simple};
 
 mod data;
 mod pages;
@@ -51,7 +55,7 @@ impl FromStr for View {
         match s {
             "plain" => Ok(View::Plain),
             "bulma" => Ok(View::Bulma),
-            _ => Err(format!("Invalid view value {}", s)),
+            _ => Err(format!("Invalid view value {s}")),
         }
     }
 }
@@ -105,7 +109,7 @@ fn tabs(props: &TabsProps) -> Html {
                     <li class={classes!(classes)}>
                         <a href={format!("/{}/{}", view, example.to_lowercase()) }>
                             {example}
-                            <span class={classes!(tag_classes)} style="margin-left: 0.5rem">{format!("view: {}", view)}</span>
+                            <span class={classes!(tag_classes)} style="margin-left: 0.5rem">{format!("view: {view}")}</span>
                         </a>
                     </li>
                 }

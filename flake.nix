@@ -2,13 +2,15 @@
   description = "A libary that contains various utils for developing web apps with yew-rs";
 
   inputs.nixpkgs.url = "nixpkgs/release-23.05";
-  inputs.nix-rust-utils.url = "git+https://git.vdx.hu/voidcontext/nix-rust-utils.git?ref=refs/tags/v0.8.0";
+  inputs.nixpkgs-unstable.url = "nixpkgs/nixpkgs-unstable";
+  inputs.nix-rust-utils.url = "git+https://git.vdx.hu/voidcontext/nix-rust-utils.git?ref=refs/tags/v0.10.0";
   inputs.nix-rust-utils.inputs.nixpkgs.follows = "nixpkgs";
   inputs.flake-utils.url = "github:numtide/flake-utils";
   inputs.rust-overlay.url = "github:oxalica/rust-overlay";
 
   outputs = {
     nixpkgs,
+    nixpkgs-unstable,
     flake-utils,
     nix-rust-utils,
     rust-overlay,
@@ -18,7 +20,10 @@
       system: let
         pkgs = import nixpkgs {
           inherit system;
-          overlays = [rust-overlay.overlays.default];
+          overlays = [
+            rust-overlay.overlays.default
+            (final: prev: {unstable = nixpkgs-unstable.legacyPackages.${system};})
+          ];
         };
         rustWithWasm32 = pkgs.rust-bin.stable."1.69.0".default.override {
           targets = ["wasm32-unknown-unknown"];
@@ -44,21 +49,23 @@
           }
         '';
 
-        yew-components = nru.mkWasmCrate {
+        commonArgs = {
           inherit src;
+          buildInputs = [pkgs.unstable.wasm-bindgen-cli];
           # Nodejs is need by wasm-bindgen-test
           checkInputs = [pkgs.nodejs];
         };
 
+        yew-components = nru.mkWasmCrate commonArgs;
+
         example = name:
         # TODO: find a better way to build examples
-          nru.mkWasmCrate {
-            inherit src;
-            checkInputs = [pkgs.nodejs];
-            # Build examples in the preBuild step and copy them into the release directory so that
-            # the postBuild script picks them up and generates their JS bindings
-            preBuild = nru.snippets.wasm.buildExample name;
-          };
+          nru.mkWasmCrate (commonArgs
+            // {
+              # Build examples in the preBuild step and copy them into the release directory so that
+              # the postBuild script picks them up and generates their JS bindings
+              preBuild = nru.snippets.wasm.buildExample name;
+            });
 
         serve-example-demo = name: port: let
           demo-src = pkgs.symlinkJoin {
@@ -96,18 +103,9 @@
           ${pkgs.alejandra}/bin/alejandra -e $WORKSPACE/nix/node $WORKSPACE
         '';
 
-        cypress-bin = pkgs.cypress.overrideAttrs (old: let
-          version = "12.3.0";
-        in {
-          inherit version;
+        cypress-bin = pkgs.cypress;
 
-          src = pkgs.fetchzip {
-            url = "https://cdn.cypress.io/desktop/${version}/linux-x64/cypress.zip";
-            sha256 = "sha256-RhPH/MBF8lqXeFEm2sd73Z55jgcl45VsmRWtAhckrP0=";
-          };
-        });
-
-        cypress = node-packages."cypress-12.3.x".overrideAttrs (old:
+        cypress = node-packages."cypress-${pkgs.cypress.version}".overrideAttrs (old:
           {
             buildInputs = old.buildInputs ++ (pkgs.lib.optionals (system == flake-utils.lib.system.x86_64-linux) [cypress-bin]);
           }
@@ -216,7 +214,7 @@
         };
 
         devShells.default = nru.mkDevShell {
-          crate = yew-components;
+          inputsFrom = [yew-components];
           inherit checks;
           buildInputs = [
             pkgs.node2nix
@@ -224,7 +222,7 @@
             pkgs.cargo-edit
             gen-node-packages
             watch-autocomplete-demo
-            cypress
+            # cypress
             fmt
             rustWithWasm32
           ];

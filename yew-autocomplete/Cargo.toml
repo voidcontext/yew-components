@@ -15,19 +15,18 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 wasm-bindgen = { version = "0.2.*", features = ["serde-serialize"] }
 wasm-bindgen-futures = "0.4"
-yew = "0.20"
-yew-commons = {path = "../yew-commons", version = "0.1.1" }
+yew = "0.21"
 web-sys = { version = "0.3", features = ["HtmlSelectElement"] }
 futures = "0.3.21"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
-yew = {version = "0.20", features = ["csr"]}
+yew = {version = "0.21", features = ["csr"]}
 web-sys = { version = "0.3", features = ["HtmlSelectElement"] }
 js-sys = "0.3.55"
 
 # examples
-yew-router = "0.17.0"
+yew-router = "0.18"
 gloo-utils = "0.1.6"
 
 [[example]]

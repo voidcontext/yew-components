@@ -99,6 +99,7 @@ where
         }
     }
 
+    #[allow(clippy::let_underscore_untyped)]
     fn view(&self, ctx: &Context<Self>) -> Html {
         let input_callbacks = InputCallbacks {
             on_input: ctx.link().callback(Msg::OnInput),
