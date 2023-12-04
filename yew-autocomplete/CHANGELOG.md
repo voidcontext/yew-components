@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## yew-autocomplete-v0.3.1 - 2023-12-04
+#### Bug Fixes
+- propagate props updates to internal state (#7) - (c00d044) - Gabor Pihaj
+
+- - -
+
 ## yew-autocomplete-v0.3.0 - 2023-11-25
 #### Build system
 - upgrade nix-rust-utils to v0.8.0 (#3) - (c391428) - Gabor Pihaj
