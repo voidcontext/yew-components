@@ -3,7 +3,7 @@ use std::{future::Future, pin::Pin, rc::Rc};
 use yew::prelude::*;
 
 use crate::{
-    autocomplete_state::{AutocompleteState, HighlightDirection},
+    autocomplete_state::{AutocompleteConfig, AutocompleteState, HighlightDirection},
     view::{self, InputCallbacks, RenderHtml},
 };
 
@@ -54,13 +54,13 @@ where
 
     fn create(ctx: &Context<Self>) -> Self {
         Self {
-            state: AutocompleteState::new(
+            state: AutocompleteState::new(AutocompleteConfig::new(
                 ctx.props().auto,
                 ctx.props().multi_select,
                 ctx.props().onchange.clone(),
                 ctx.link().callback(Msg::Noop),
                 ctx.props().resolve_items.clone(),
-            ),
+            )),
         }
     }
 
@@ -97,6 +97,19 @@ where
             }
             Msg::Noop(reload) => reload,
         }
+    }
+
+    fn changed(&mut self, ctx: &Context<Self>, old_props: &Self::Properties) -> bool {
+        if old_props != ctx.props() {
+            self.state.update_config(AutocompleteConfig::new(
+                ctx.props().auto,
+                ctx.props().multi_select,
+                ctx.props().onchange.clone(),
+                ctx.link().callback(Msg::Noop),
+                ctx.props().resolve_items.clone(),
+            ));
+        }
+        true
     }
 
     #[allow(clippy::let_underscore_untyped)]

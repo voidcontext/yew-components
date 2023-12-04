@@ -121,7 +121,7 @@
           watches = nru.utils.watch {
             "$WORKSPACE/yew-autocomplete/src $WORKSPACE/yew-autocomplete/examples/autocomplete" = ''
               ${nru.snippets.wasm.buildExample "autocomplete"}
-              ${nru.snippets.wasm.bindgen {outDir = "$WORKSPACE/dist/nru";}}
+              ${nru.snippets.wasm.bindgen {outDir = "$WORKSPACE/dist/lib";}}
             '';
           };
         in
@@ -129,7 +129,7 @@
           (nru.snippets.utils.cleanupWrapper ''
             out=$WORKSPACE/dist
 
-            mkdir -p $out/nru
+            mkdir -p $out/lib
             cp ${index-html "autocomplete" plainViewCss}/index.html $out
             ${watches}
             ${nru.snippets.utils.serve "$out" 9001}
@@ -222,7 +222,7 @@
             pkgs.cargo-edit
             gen-node-packages
             watch-autocomplete-demo
-            # cypress
+            cypress
             fmt
             rustWithWasm32
           ];

@@ -10,25 +10,15 @@ pub enum HighlightDirection {
     Next,
 }
 
-pub(crate) struct AutocompleteState<T> {
-    // State
-    input: String,
-    items: Rc<RefCell<Vec<T>>>,
-    highlighted_item: Rc<RefCell<Option<usize>>>,
-    selected_items: Vec<T>,
-    onselect: Callback<Vec<T>>,
-
-    onresolve: Callback<bool>,
-    item_resolver: ItemResolver<T>,
-
+pub struct AutocompleteConfig<T> {
     auto: bool,
     multi_select: bool,
+    onselect: Callback<Vec<T>>,
+    onresolve: Callback<bool>,
+    item_resolver: ItemResolver<T>,
 }
 
-impl<T> AutocompleteState<T>
-where
-    T: 'static + Clone + PartialEq,
-{
+impl<T> AutocompleteConfig<T> {
     pub fn new(
         auto: bool,
         multi_select: bool,
@@ -37,16 +27,40 @@ where
         item_resolver: ItemResolver<T>,
     ) -> Self {
         Self {
+            auto,
+            multi_select,
+            onselect,
+            onresolve,
+            item_resolver,
+        }
+    }
+}
+
+pub(crate) struct AutocompleteState<T> {
+    config: AutocompleteConfig<T>,
+    // State
+    input: String,
+    items: Rc<RefCell<Vec<T>>>,
+    highlighted_item: Rc<RefCell<Option<usize>>>,
+    selected_items: Vec<T>,
+}
+
+impl<T> AutocompleteState<T>
+where
+    T: 'static + Clone + PartialEq,
+{
+    pub fn new(config: AutocompleteConfig<T>) -> Self {
+        Self {
             input: String::default(),
             items: Rc::new(RefCell::new(Vec::new())),
             highlighted_item: Rc::new(RefCell::new(None)),
             selected_items: Vec::default(),
-            onresolve,
-            item_resolver,
-            onselect,
-            auto,
-            multi_select,
+            config,
         }
+    }
+
+    pub fn update_config(&mut self, config: AutocompleteConfig<T>) {
+        self.config = config;
     }
 
     // ### Input
@@ -58,7 +72,7 @@ where
         self.input = value.to_string();
 
         // TODO: make the min length configurable
-        if self.input.len() > 2 && self.auto {
+        if self.input.len() > 2 && self.config.auto {
             self.resolve();
         } else {
             let mut guard = self.items.borrow_mut();
@@ -70,12 +84,12 @@ where
 
     pub fn resolve(&self) {
         let string = self.input.clone();
-        let item_resolver = self.item_resolver.clone();
+        let item_resolver = self.config.item_resolver.clone();
 
         let rc_items = Rc::clone(&self.items);
         let rc_highlighted = Rc::clone(&self.highlighted_item);
 
-        let onresolve = self.onresolve.clone();
+        let onresolve = self.config.onresolve.clone();
 
         spawn_local(async move {
             // resolve items by providing the input string
@@ -137,7 +151,7 @@ where
     pub fn select_item(&mut self, index: usize) {
         let mut items = self.items.borrow_mut();
 
-        if self.multi_select {
+        if self.config.multi_select {
             if !self.selected_items.iter().any(|item| *item == items[index]) {
                 self.selected_items.push(items[index].clone());
             }
@@ -147,7 +161,7 @@ where
 
         self.input = String::new();
         *items = Vec::new();
-        self.onselect.emit(self.selected_items.clone());
+        self.config.onselect.emit(self.selected_items.clone());
     }
 }
 
@@ -158,7 +172,7 @@ mod tests {
 
     use crate::ItemResolverResult;
 
-    use super::{AutocompleteState, HighlightDirection};
+    use super::{AutocompleteConfig, AutocompleteState, HighlightDirection};
 
     use futures::StreamExt;
     use wasm_bindgen::prelude::*;
@@ -178,7 +192,7 @@ mod tests {
     fn not_resolved_default_state<T: std::fmt::Debug + Clone + PartialEq + 'static>(
         multi: bool,
     ) -> AutocompleteState<T> {
-        AutocompleteState::new(
+        AutocompleteState::new(AutocompleteConfig::new(
             true,
             multi,
             noop_callback(),
@@ -186,14 +200,14 @@ mod tests {
             Callback::from(|_s: String| -> ItemResolverResult<T> {
                 panic!("Shouldn't be called");
             }),
-        )
+        ))
     }
 
     fn default_state_with_static_results<T: std::fmt::Debug + Clone + PartialEq + 'static>(
         multi: bool,
         results: Vec<T>,
     ) -> AutocompleteState<T> {
-        AutocompleteState::new(
+        AutocompleteState::new(AutocompleteConfig::new(
             true,
             multi,
             noop_callback(),
@@ -202,7 +216,7 @@ mod tests {
                 let results = results.clone();
                 Box::pin(async { Ok(results) })
             }),
-        )
+        ))
     }
 
     async fn tick() {
@@ -227,7 +241,7 @@ mod tests {
     async fn test_oninput_should_resolve_autocomplete_items() {
         let (tx, rx) = futures::channel::mpsc::channel::<String>(10);
 
-        let mut state = AutocompleteState::new(
+        let mut state = AutocompleteState::new(AutocompleteConfig::new(
             true,
             false,
             noop_callback(),
@@ -239,7 +253,7 @@ mod tests {
                     Ok(vec!["result".to_string()])
                 })
             }),
-        );
+        ));
 
         state.oninput("this is a text");
         tick().await;
@@ -258,7 +272,7 @@ mod tests {
             tx.try_send("onresolve called".to_string()).unwrap();
         });
 
-        let mut state = AutocompleteState::new(
+        let mut state = AutocompleteState::new(AutocompleteConfig::new(
             true,
             false,
             noop_callback(),
@@ -266,7 +280,7 @@ mod tests {
             Callback::from(move |_: String| -> ItemResolverResult<String> {
                 Box::pin(async move { Ok(vec!["result".to_string()]) })
             }),
-        );
+        ));
 
         state.oninput("this is a text");
         tick().await;
@@ -278,7 +292,7 @@ mod tests {
 
     #[wasm_bindgen_test]
     async fn test_oninput_should_not_resolve_autocomplete_items_when_auto_false() {
-        let mut state = AutocompleteState::new(
+        let mut state = AutocompleteState::new(AutocompleteConfig::new(
             false,
             false,
             noop_callback(),
@@ -286,7 +300,7 @@ mod tests {
             Callback::from(|_s: String| -> ItemResolverResult<String> {
                 panic!("Shouldn't be called")
             }),
-        );
+        ));
 
         state.oninput("this is a text");
         tick().await;
@@ -343,7 +357,7 @@ mod tests {
     async fn test_resolve_should_resolve_autocomplete_items_when_auto_is_false() {
         let (resolver_tx, resolver_rx) = futures::channel::mpsc::channel::<String>(10);
 
-        let mut state = AutocompleteState::new(
+        let mut state = AutocompleteState::new(AutocompleteConfig::new(
             false,
             false,
             noop_callback(),
@@ -355,7 +369,7 @@ mod tests {
                     Ok(vec!["result".to_string()])
                 })
             }),
-        );
+        ));
 
         state.oninput("this is a text");
         tick().await;
@@ -547,7 +561,7 @@ mod tests {
             })
         };
 
-        let mut state = AutocompleteState::new(
+        let mut state = AutocompleteState::new(AutocompleteConfig::new(
             true,
             true,
             onselect,
@@ -561,7 +575,7 @@ mod tests {
                     ])
                 })
             }),
-        );
+        ));
 
         state.oninput("foo");
         tick().await;
@@ -597,7 +611,7 @@ mod tests {
 
     #[wasm_bindgen_test]
     async fn test_select_item_should_reset_input_after_selecting_an_item() {
-        let mut state = AutocompleteState::new(
+        let mut state = AutocompleteState::new(AutocompleteConfig::new(
             true,
             false,
             noop_callback(),
@@ -605,7 +619,7 @@ mod tests {
             Callback::from(|_s: String| -> ItemResolverResult<&'static str> {
                 Box::pin(async { Ok(vec!["foo", "foobar"]) })
             }),
-        );
+        ));
 
         state.oninput("foo");
         tick().await;
@@ -617,7 +631,7 @@ mod tests {
 
     #[wasm_bindgen_test]
     async fn test_select_item_should_reset_items_after_selecting_an_item() {
-        let mut state = AutocompleteState::new(
+        let mut state = AutocompleteState::new(AutocompleteConfig::new(
             true,
             false,
             noop_callback(),
@@ -625,7 +639,7 @@ mod tests {
             Callback::from(|_s: String| -> ItemResolverResult<&'static str> {
                 Box::pin(async { Ok(vec!["foo", "foobar"]) })
             }),
-        );
+        ));
 
         state.oninput("foo");
         tick().await;
@@ -638,7 +652,7 @@ mod tests {
 
     #[wasm_bindgen_test]
     async fn test_select_item_should_reset_highlighted_items_after_selecting_an_item() {
-        let mut state = AutocompleteState::new(
+        let mut state = AutocompleteState::new(AutocompleteConfig::new(
             true,
             false,
             noop_callback(),
@@ -646,7 +660,7 @@ mod tests {
             Callback::from(|_s: String| -> ItemResolverResult<&'static str> {
                 Box::pin(async { Ok(vec!["foo", "foobar"]) })
             }),
-        );
+        ));
 
         state.oninput("foo");
         tick().await;
@@ -711,7 +725,7 @@ mod tests {
             })
         };
 
-        let mut state = AutocompleteState::new(
+        let mut state = AutocompleteState::new(AutocompleteConfig::new(
             true,
             true,
             onselect,
@@ -725,7 +739,7 @@ mod tests {
                     ])
                 })
             }),
-        );
+        ));
 
         state.oninput("foo");
         tick().await;

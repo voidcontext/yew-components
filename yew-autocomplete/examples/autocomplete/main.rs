@@ -11,12 +11,12 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 
 pub use data::countries::COUNTRIES;
-use pages::{multi, non_auto, simple};
+use pages::{issue_001, multi, non_auto, simple};
 
 mod data;
 mod pages;
 
-#[derive(Clone, Routable, PartialEq)]
+#[derive(Debug, Clone, Routable, PartialEq)]
 enum Route {
     #[at("/")]
     Home,
@@ -26,15 +26,17 @@ enum Route {
     Multi { view: View },
     #[at("/:view/nonauto")]
     NonAuto { view: View },
+    #[at("/:view/issue-001")]
+    Issue001 { view: View },
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum View {
     Plain,
     Bulma,
 }
 
-#[derive(Properties, PartialEq)]
+#[derive(Debug, Properties, PartialEq)]
 pub struct PageProps {
     view: View,
 }
@@ -61,6 +63,7 @@ impl FromStr for View {
 }
 
 fn switch(route: Route) -> Html {
+    // log(&format!("route: {route:?}"));
     match route {
         Route::Home => html! {
             <Redirect<Route> to={Route::Simple { view: View::Plain }}/>
@@ -74,6 +77,9 @@ fn switch(route: Route) -> Html {
         },
         Route::NonAuto { view } => html! {
             <Tabs example="NonAuto" view={view.clone()}><non_auto::NonAuto {view} /></Tabs>
+        },
+        Route::Issue001 { view } => html! {
+            <issue_001::Issue001 {view} />
         },
     }
 }
